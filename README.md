@@ -87,7 +87,6 @@ Loyiha to'liq SEO optimizatsiyasi bilan jihozlangan:
 ### Environment Variables
 
 ```env
-VITE_API_URL=https://api.joyboronline.uz/
 VITE_APP_NAME=JoyBor Admin
 VITE_APP_VERSION=1.0.0
 ```
