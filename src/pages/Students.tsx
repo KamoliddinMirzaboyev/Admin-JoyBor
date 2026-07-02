@@ -721,7 +721,7 @@ const Students: React.FC = () => {
         toast.error('Avtorizatsiya talab qilinadi!');
         return;
       }
-      const response = await fetch('https://joyborv1.pythonanywhere.com/export-student/', {
+      const response = await fetch(`${link}/export-student/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

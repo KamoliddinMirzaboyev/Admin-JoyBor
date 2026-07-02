@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useLocation, Link } from "react-router-dom";
 import { formatCurrency, formatCurrencyDetailed } from "../utils/formatters";
 import { usePayments, useStudents, useCreatePayment, useUpdatePayment } from "../hooks/api/useApi";
+import { link as apiBaseUrl } from "../data/config";
 
 // Type definitions
 interface Student extends Record<string, unknown> {
@@ -384,7 +385,7 @@ const Payments: React.FC = () => {
 
       toast.info("Export boshlanmoqda...");
 
-      const response = await fetch("https://joyborv1.pythonanywhere.com/export-payment/", {
+      const response = await fetch(`${apiBaseUrl}/export-payment/`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
