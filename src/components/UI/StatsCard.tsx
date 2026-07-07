@@ -23,11 +23,11 @@ const StatsCard: React.FC<StatsCardProps> = ({
   subStats,
 }) => {
   const colorClasses = {
-    primary: 'from-primary-500 to-primary-600',
-    secondary: 'from-secondary-500 to-secondary-600',
-    accent: 'from-accent-500 to-accent-600',
-    warning: 'from-yellow-500 to-orange-500',
-    danger: 'from-red-500 to-red-600',
+    primary: 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400',
+    secondary: 'bg-secondary-50 text-secondary-600 dark:bg-secondary-900/20 dark:text-secondary-400',
+    accent: 'bg-accent-50 text-accent-600 dark:bg-accent-900/20 dark:text-accent-400',
+    warning: 'bg-yellow-50 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400',
+    danger: 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400',
   };
 
   const changeClasses = {
@@ -40,34 +40,32 @@ const StatsCard: React.FC<StatsCardProps> = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -5 }}
-      className="bg-white dark:bg-gray-800 rounded-2xl shadow-card hover:shadow-lg transition-all duration-300 p-6 border border-gray-200 dark:border-gray-700 min-h-[220px] flex flex-col items-center justify-between"
+      className="bg-white dark:bg-gray-800 rounded-xl shadow-card border border-gray-200 dark:border-gray-700 p-4 flex flex-col gap-3"
     >
-      <div className={`w-12 h-12 bg-gradient-to-br ${colorClasses[color]} rounded-full flex items-center justify-center mb-2`}>
-        <Icon className="w-6 h-6 text-white" />
+      <div className="flex items-center gap-3">
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${colorClasses[color]}`}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</h3>
       </div>
-      <h3 className="text-lg font-bold text-gray-900 dark:text-white text-center mb-2 tracking-wide uppercase">{title}</h3>
-      
+
       {value !== undefined && (
-        <div className="text-3xl font-black text-gray-900 dark:text-white my-2">
-          {value}
+        <div className="text-2xl font-semibold text-gray-900 dark:text-white">{value}</div>
+      )}
+
+      {subStats && subStats.length > 0 && (
+        <div className="flex flex-col gap-1.5 pt-2 border-t border-gray-100 dark:border-gray-700">
+          {subStats.map((stat, idx) => (
+            <div key={idx} className="flex items-center justify-between text-sm">
+              <span className="text-gray-500 dark:text-gray-400">{stat.label}</span>
+              <span className="font-medium text-gray-900 dark:text-white">{stat.value}</span>
+            </div>
+          ))}
         </div>
       )}
 
-      <div className="w-full flex-1 flex flex-col justify-center gap-2">
-        {subStats && subStats.length > 0 && (
-          <div className="flex flex-col gap-2 w-full">
-            {subStats.map((stat, idx) => (
-              <div key={idx} className="flex items-center justify-between w-full px-1">
-                <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">{stat.label}</span>
-                <span className="text-base font-bold text-primary-600 dark:text-primary-400">{stat.value}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
       {change && (
-        <p className={`text-xs font-medium ${changeClasses[changeType]} mt-3 text-center`}>{change}</p>
+        <p className={`text-xs font-medium ${changeClasses[changeType]}`}>{change}</p>
       )}
     </motion.div>
   );
