@@ -65,37 +65,35 @@ const Sidebar: React.FC = () => {
       initial={false}
       animate={{
         width: sidebarCollapsed && !mobileOpen ? SIDEBAR_COLLAPSED : SIDEBAR_WIDTH,
-        boxShadow: '0 8px 32px 0 rgba(0,0,0,0.12)',
       }}
       transition={{ type: 'spring', stiffness: 90, damping: 18, mass: 0.7 }}
-      className="h-full flex flex-col bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-r border-gray-200 dark:border-gray-700 rounded-r-2xl shadow-2xl overflow-hidden relative transition-all duration-300"
+      className="h-full flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-hidden relative transition-all duration-300"
       style={{
         minWidth: sidebarCollapsed && !mobileOpen ? SIDEBAR_COLLAPSED : SIDEBAR_WIDTH,
         maxWidth: sidebarCollapsed && !mobileOpen ? SIDEBAR_COLLAPSED : SIDEBAR_WIDTH,
       }}
     >
       {/* Navigation */}
-      <nav className="mt-10 px-3 flex-1">
-        <ul className="space-y-2">
+      <nav className="mt-6 px-3 flex-1">
+        <ul className="space-y-1">
           {navigation.map((item) => {
             const isActive = location.pathname === item.href;
             const Icon = item.icon;
             return (
               <li key={item.name} className="relative flex items-center">
                 <motion.button
-                  whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => handleNavigation(item.href)}
-                  className={`w-full flex items-center space-x-3 px-3 py-3 rounded-xl text-base font-medium transition-all duration-200 group ${
+                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 group ${
                     isActive
-                      ? 'bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow'
+                      ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                 >
                   <Icon
-                    className={`w-6 h-6 flex-shrink-0 ${
+                    className={`w-5 h-5 flex-shrink-0 ${
                       isActive
-                        ? 'text-white'
+                        ? 'text-primary-600 dark:text-primary-400'
                         : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300'
                     }`}
                   />
@@ -105,7 +103,7 @@ const Sidebar: React.FC = () => {
                   {isActive && !sidebarCollapsed && !mobileOpen && (
                     <motion.div
                       layoutId="activeIndicator"
-                      className="ml-auto w-2 h-2 bg-white rounded-full"
+                      className="ml-auto w-1.5 h-1.5 bg-primary-600 dark:bg-primary-400 rounded-full"
                     />
                   )}
                 </motion.button>
@@ -132,7 +130,7 @@ const Sidebar: React.FC = () => {
             transition={{ duration: 0.55, ease: 'easeInOut' }}
             className="mt-auto mb-5 px-3"
           >
-            <div className="bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/20 dark:to-blue-900/40 rounded-xl p-3 border border-blue-200 dark:border-blue-800">
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-2">
                 <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center p-1">
                   <img src="/logoicon.svg" alt="TTU Logo" className="w-full h-full object-contain" />
