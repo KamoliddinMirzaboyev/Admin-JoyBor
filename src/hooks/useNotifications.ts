@@ -38,7 +38,7 @@ export const useNotifications = () => {
   // Play sound when unread count increases
   useEffect(() => {
     if (unreadCount > prevUnreadCount.current) {
-      audioRef.current?.play().catch(err => console.error('Audio play error:', err));
+      audioRef.current?.play().catch(() => {});
       
       // Optional: Show toast for new notification if it's just one
       if (unreadCount - prevUnreadCount.current === 1) {

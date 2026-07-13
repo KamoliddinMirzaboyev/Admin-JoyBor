@@ -23,14 +23,7 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
   
   try {
     const res = await fetch(fullUrl, { ...options, headers });
-    
-    // Handle 403 Forbidden specifically
-    if (res.status === 403) {
-      // 403 Forbidden - User may not have permission
-      // Return empty data instead of throwing error for 403
-      return {};
-    }
-    
+
     // Handle 401 Unauthorized - redirect to login
     if (res.status === 401) {
       sessionStorage.removeItem('access');
@@ -74,6 +67,17 @@ export const patch = (url: string, data?: unknown) => apiFetch(url, {
 });
 export const del = (url: string) => apiFetch(url, { method: 'DELETE' });
 
+// Raw fetch for endpoints that return a file blob instead of JSON (still shares auth/base-url logic)
+function apiFetchRaw(url: string, options: RequestInit = {}) {
+  const token = sessionStorage.getItem('access');
+  const headers: Record<string, string> = {
+    ...((options.headers as Record<string, string>) || {}),
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const fullUrl = url.startsWith('http') ? url : BASE_URL + url;
+  return fetch(fullUrl, { ...options, headers });
+}
+
 // API endpoints
 export const api = {
   // Auth
@@ -114,8 +118,9 @@ export const api = {
   
   createStudent: (data: Record<string, unknown>) => post('/student/create/', data),
   getStudent: (id: number | string) => get(`/students/${id}/`),
-  updateStudent: (id: number | string, data: Record<string, unknown>) => patch(`/students/${id}/`, data),
+  updateStudent: (id: number | string, data: FormData | Record<string, unknown>) => patch(`/students/${id}/`, data),
   deleteStudent: (id: number | string) => del(`/students/${id}/`),
+  getUnassignedStudents: () => get('/students/unassigned/'),
   
   // Floors and Rooms
   getFloors: () => get('/floors/'),
@@ -144,6 +149,8 @@ export const api = {
   },
   getApplication: (id: number | string) => get(`/applications/${id}/`),
   updateApplication: (id: number | string, data: Record<string, unknown>) => patch(`/applications/${id}/`, data),
+  approveApplication: (id: number | string, data: Record<string, unknown>) => patch(`/applications/${id}/approve/`, data),
+  rejectApplication: (id: number | string, data: Record<string, unknown>) => put(`/applications/${id}/admin/`, data),
   deleteApplication: (id: number | string) => del(`/applications/${id}/`),
   
   // Leaders
@@ -268,10 +275,9 @@ export const api = {
   
   // Dormitory Management
   patchMyDormitory: (data: Record<string, unknown>) => patch('/dormitory/', data),
-  updateMyDormitory: async (data: Record<string, unknown>) => {
-    const token = sessionStorage.getItem('access');
+  updateMyDormitory: (data: Record<string, unknown>) => {
     const formData = new FormData();
-    
+
     // Convert data to FormData
     Object.entries(data).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
@@ -283,21 +289,8 @@ export const api = {
         }
       }
     });
-    
-    const response = await fetch(`${BASE_URL}/admin/my-dormitory/`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: formData,
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || errorData.message || 'Yangilashda xatolik');
-    }
-    
-    return response.json();
+
+    return patch('/admin/my-dormitory/', formData);
   },
   
   // Amenities Management
@@ -314,23 +307,7 @@ export const api = {
   
   // Dormitory Images
   getDormitoryImages: () => get('/dormitory-images/'),
-  uploadDormitoryImage: async (data: FormData) => {
-    const token = sessionStorage.getItem('access');
-    const response = await fetch(`${BASE_URL}/dormitory-images/`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: data,
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || errorData.message || 'Rasm yuklashda xatolik');
-    }
-    
-    return response.json();
-  },
+  uploadDormitoryImage: (data: FormData) => post('/dormitory-images/', data),
   deleteDormitoryImage: (id: number) => del(`/dormitory-images/${id}/`),
   
   // Notifications
@@ -339,22 +316,18 @@ export const api = {
       const res = await get('/notifications/');
       return res.results || res || [];
     } catch (error) {
-      console.error('Notifications fetch error:', error);
       return [];
     }
   },
   
   markNotificationAsRead: async (id: number) => {
     try {
-      console.log('Trying PATCH /notifications/' + id + '/');
       return await patch(`/notifications/${id}/`, { is_read: true });
     } catch (error) {
-      console.error('Mark notification as read error:', error);
       // Fallback to alternative endpoint
       try {
         return await post('/notifications/mark-read/', { notification_id: id });
       } catch (fallbackError) {
-        console.error('Fallback mark as read error:', fallbackError);
         throw fallbackError;
       }
     }
@@ -364,55 +337,18 @@ export const api = {
     try {
       return await post('/notifications/mark-all-read/', {});
     } catch (error) {
-      console.error('Mark all notifications as read error:', error);
       throw error;
     }
   },
   
-  // Export functions
-  exportStudents: () => {
-    const token = sessionStorage.getItem('access');
-    return fetch(`${BASE_URL}/export-student/`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-  },
-  
-  exportPayments: () => {
-    const token = sessionStorage.getItem('access');
-    return fetch(`${BASE_URL}/export-payment/`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-  },
-  
+  // Export functions (return raw Response — caller reads the file blob)
+  exportStudents: () => apiFetchRaw('/export-student/'),
+  exportPayments: () => apiFetchRaw('/export-payment/'),
+
   // Admin profile endpoints
   getAdminProfile: () => get(`${BASE_URL}/profile/`),
-  
-  updateAdminProfile: async (data: unknown) => {
-    const token = sessionStorage.getItem('access');
-    if (!token) {
-      throw new Error('Avtorizatsiya talab qilinadi');
-    }
-    
-    return fetch(`${BASE_URL}/profile/`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    }).then(res => {
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      }
-      return res.json();
-    });
-  }
+
+  updateAdminProfile: (data: unknown) => patch('/profile/', data),
 };
 
 export default api;

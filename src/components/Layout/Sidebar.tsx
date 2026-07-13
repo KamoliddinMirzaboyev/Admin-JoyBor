@@ -35,11 +35,17 @@ const Sidebar: React.FC = () => {
 
   // Mobil uchun
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 1024 : false;
+  const [isMobile, setIsMobile] = React.useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches
+  );
   React.useEffect(() => {
-    const handleResize = () => setMobileOpen(false);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const mql = window.matchMedia('(max-width: 1023px)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      setIsMobile(e.matches);
+      setMobileOpen(false);
+    };
+    mql.addEventListener('change', handleChange);
+    return () => mql.removeEventListener('change', handleChange);
   }, []);
 
   // Mobil va desktop uchun alohida toggle
@@ -53,12 +59,6 @@ const Sidebar: React.FC = () => {
     if (isMobile) setMobileOpen(false);
   };
 
-  // Demo settings
-  const settings: any = {
-    name: 'JoyBor Yotoqxonasi',
-    logo: null,
-  };
-
   // Sidebar content
   const sidebarContent = (
     <motion.aside
@@ -67,7 +67,7 @@ const Sidebar: React.FC = () => {
         width: sidebarCollapsed && !mobileOpen ? SIDEBAR_COLLAPSED : SIDEBAR_WIDTH,
       }}
       transition={{ type: 'spring', stiffness: 90, damping: 18, mass: 0.7 }}
-      className="h-full flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-hidden relative transition-all duration-300"
+      className="h-full flex flex-col bg-white dark:bg-surface-900 border-r border-surface-200 dark:border-surface-800 overflow-hidden relative transition-all duration-300"
       style={{
         minWidth: sidebarCollapsed && !mobileOpen ? SIDEBAR_COLLAPSED : SIDEBAR_WIDTH,
         maxWidth: sidebarCollapsed && !mobileOpen ? SIDEBAR_COLLAPSED : SIDEBAR_WIDTH,
@@ -81,35 +81,35 @@ const Sidebar: React.FC = () => {
             const Icon = item.icon;
             return (
               <li key={item.name} className="relative flex items-center">
+                {isActive && (
+                  <motion.span
+                    layoutId="activeIndicator"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-brand-600"
+                  />
+                )}
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={() => handleNavigation(item.href)}
-                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 group ${
+                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-150 group ${
                     isActive
-                      ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400'
+                      : 'text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800'
                   }`}
                 >
                   <Icon
                     className={`w-5 h-5 flex-shrink-0 ${
                       isActive
-                        ? 'text-primary-600 dark:text-primary-400'
-                        : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300'
+                        ? 'text-brand-600 dark:text-brand-400'
+                        : 'text-surface-500 dark:text-surface-400 group-hover:text-surface-700 dark:group-hover:text-surface-300'
                     }`}
                   />
                   {(!sidebarCollapsed || mobileOpen) && (
                     <span className="truncate">{item.name}</span>
                   )}
-                  {isActive && !sidebarCollapsed && !mobileOpen && (
-                    <motion.div
-                      layoutId="activeIndicator"
-                      className="ml-auto w-1.5 h-1.5 bg-primary-600 dark:bg-primary-400 rounded-full"
-                    />
-                  )}
                 </motion.button>
                 {/* Tooltip for collapsed state (desktop) */}
                 {sidebarCollapsed && !mobileOpen && (
-                  <div className="absolute left-20 ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                  <div className="absolute left-20 ml-2 px-2 py-1 bg-surface-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
                     {item.name}
                   </div>
                 )}
@@ -130,18 +130,14 @@ const Sidebar: React.FC = () => {
             transition={{ duration: 0.55, ease: 'easeInOut' }}
             className="mt-auto mb-5 px-3"
           >
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+            <div className="bg-surface-50 dark:bg-surface-800/50 rounded-2xl p-3 border border-surface-200 dark:border-surface-800">
               <div className="flex items-center space-x-2">
-                <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center p-1">
+                <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center p-1">
                   <img src="/logoicon.svg" alt="TTU Logo" className="w-full h-full object-contain" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-900 dark:text-white">
-                    {settings?.university?.name || 'Universitet'}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {settings?.name || settings?.dormitory_name || 'Yotoqxona'}
-                  </p>
+                  <p className="text-xs font-semibold text-surface-900 dark:text-white">Universitet</p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400">JoyBor Yotoqxonasi</p>
                 </div>
               </div>
             </div>

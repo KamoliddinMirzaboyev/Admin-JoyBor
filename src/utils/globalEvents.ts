@@ -36,7 +36,6 @@ class GlobalEventManager {
       try {
         callback(data);
       } catch (error) {
-        console.error(`Error in event listener for ${eventType}:`, error);
       }
     });
 
@@ -56,12 +55,10 @@ class GlobalEventManager {
               try {
                 callback(event.data);
               } catch (error) {
-                console.error(`Error in cross-tab event listener for ${event.type}:`, error);
               }
             });
           }
         } catch (error) {
-          console.error('Error parsing global event:', error);
         }
       }
     });

@@ -34,12 +34,10 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
 
   const createMap = () => {
     if (!mapRef.current || !window.google?.maps) {
-      console.log('❌ Map container or Google Maps not ready');
       return;
     }
 
     try {
-      console.log('🗺️ Creating Google Map...');
 
       // Create map
       const mapInstance = new window.google.maps.Map(mapRef.current, {
@@ -106,38 +104,31 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
       setIsLoading(false);
       setError('');
 
-      console.log('✅ Google Map created successfully');
     } catch (err) {
-      console.error('❌ Error creating map:', err);
       setError('Xaritani yaratishda xatolik');
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    console.log('🔄 GoogleMap useEffect triggered');
 
     const initMap = () => {
       if (window.google?.maps && mapRef.current) {
         createMap();
       } else {
-        console.log('⏳ Waiting for Google Maps API or DOM...');
       }
     };
 
     // Check if already loaded
     if (window.google?.maps) {
-      console.log('✅ Google Maps already loaded');
       setTimeout(initMap, 100); // Small delay for DOM
     } else {
       // Listen for load event
       const handleLoad = () => {
-        console.log('📡 Google Maps loaded via event');
         setTimeout(initMap, 100);
       };
 
       const handleError = () => {
-        console.error('❌ Google Maps failed to load');
         setError('Google Maps yuklanmadi');
         setIsLoading(false);
       };
@@ -189,7 +180,6 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         }
       },
       (error) => {
-        console.error('Geolocation error:', error);
         setError('Joylashuvni aniqlab bo\'lmadi');
       }
     );

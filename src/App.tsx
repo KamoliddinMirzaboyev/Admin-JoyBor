@@ -5,21 +5,21 @@ import Layout from "./components/Layout/Layout";
 import { Toaster } from "sonner";
 import SEOHead from "./components/SEO/SEOHead";
 
-// Lazy loading komponentlar
+// Lazy loading komponentlar (bir marta, modul yuklanganda yaratiladi)
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const Students = React.lazy(() => import("./pages/Students"));
 const Payments = React.lazy(() => import("./pages/Payments"));
 const Rooms = React.lazy(() => import("./pages/Rooms"));
-const Attendance = React.lazy(() => import("./pages/Attendance"));
 const FloorDetail = React.lazy(() => import("./pages/FloorDetail"));
-const StudentProfile = React.lazy(() => import("./pages/StudentProfile"));
-const Profile = React.lazy(() => import("./pages/Profile"));
+const Attendance = React.lazy(() => import("./pages/Attendance"));
 const Applications = React.lazy(() => import("./pages/Applications"));
 const ApplicationDetail = React.lazy(() => import("./pages/ApplicationDetail"));
-const Settings = React.lazy(() => import("./pages/Settings"));
 const Staff = React.lazy(() => import("./pages/Staff"));
 const StaffProfile = React.lazy(() => import("./pages/StaffProfile"));
+const Settings = React.lazy(() => import("./pages/Settings"));
 const Notifications = React.lazy(() => import("./pages/Notifications"));
+const Profile = React.lazy(() => import("./pages/Profile"));
+const StudentProfile = React.lazy(() => import("./pages/StudentProfile"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 
 // Loading komponenti
@@ -28,6 +28,15 @@ const LoadingSpinner = () => (
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
   </div>
 );
+
+// Har bir sahifani Suspense bilan o'raydi (lazy komponentlar allaqachon yuqorida yaratilgan)
+function withSuspense(Component: React.ComponentType) {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <Component />
+    </Suspense>
+  );
+}
 
 // Create a client
 const queryClient = new QueryClient({
@@ -61,82 +70,22 @@ function App() {
       <Routes>
         <Route element={<RequireAuth />}>
           <Route path="/" element={<Layout />}>
-            <Route index element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Dashboard />
-              </Suspense>
-            } />
-            <Route path="students" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Students />
-              </Suspense>
-            } />
-            <Route path="payments" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Payments />
-              </Suspense>
-            } />
-            <Route path="rooms" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Rooms />
-              </Suspense>
-            } />
-            <Route path="rooms/:floorId" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <FloorDetail />
-              </Suspense>
-            } />
-            <Route path="attendance" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Attendance />
-              </Suspense>
-            } />
-            <Route path="applications" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Applications />
-              </Suspense>
-            } />
-            <Route path="applications/:id" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <ApplicationDetail />
-              </Suspense>
-            } />
-            <Route path="staff" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Staff />
-              </Suspense>
-            } />
-            <Route path="staff/:id" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <StaffProfile />
-              </Suspense>
-            } />
-            <Route path="settings" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Settings />
-              </Suspense>
-            } />
-            <Route path="notifications" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Notifications />
-              </Suspense>
-            } />
-            <Route path="profile" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <Profile />
-              </Suspense>
-            } />
-            <Route path="studentprofile/:studentId" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <StudentProfile />
-              </Suspense>
-            } />
+            <Route index element={withSuspense(Dashboard)} />
+            <Route path="students" element={withSuspense(Students)} />
+            <Route path="payments" element={withSuspense(Payments)} />
+            <Route path="rooms" element={withSuspense(Rooms)} />
+            <Route path="rooms/:floorId" element={withSuspense(FloorDetail)} />
+            <Route path="attendance" element={withSuspense(Attendance)} />
+            <Route path="applications" element={withSuspense(Applications)} />
+            <Route path="applications/:id" element={withSuspense(ApplicationDetail)} />
+            <Route path="staff" element={withSuspense(Staff)} />
+            <Route path="staff/:id" element={withSuspense(StaffProfile)} />
+            <Route path="settings" element={withSuspense(Settings)} />
+            <Route path="notifications" element={withSuspense(Notifications)} />
+            <Route path="profile" element={withSuspense(Profile)} />
+            <Route path="studentprofile/:studentId" element={withSuspense(StudentProfile)} />
             {/* 404 Not Found route */}
-            <Route path="*" element={
-              <Suspense fallback={<LoadingSpinner />}>
-                <NotFound />
-              </Suspense>
-            } />
+            <Route path="*" element={withSuspense(NotFound)} />
           </Route>
         </Route>
       </Routes>

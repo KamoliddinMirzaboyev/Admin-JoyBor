@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { link } from '../data/config';
+import { post } from '../data/api';
+
+interface LoginResult {
+  access?: string;
+  refresh?: string;
+  role?: string;
+}
 
 const Login: React.FC = () => {
   const [login, setLogin] = useState('');
@@ -14,53 +20,38 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    
-    console.log('🔐 Login attempt:', { username: login });
-    
+
     try {
-      const res = await fetch(`${link}/token/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: login, password }),
-      });
-      
-      console.log('📡 Response status:', res.status, res.statusText);
-      
-      const result = await res.json();
-      console.log('📥 Response data:', result);
-      if (res.ok && result.access) {
+      const result = await post('/token/', { username: login, password }) as LoginResult;
+      if (result.access) {
         // Token mavjud bo'lsa, sessionga saqlash va tizimga kirish
-        console.log('✅ Login successful! Saving token...');
         sessionStorage.setItem('access', result.access);
         sessionStorage.setItem('isAuth', 'true');
-        
+
         // Agar refresh token ham kelsa, uni ham saqlash
         if (result.refresh) {
           sessionStorage.setItem('refresh', result.refresh);
         }
-        
+
         // Agar role kelsa, uni ham saqlash
         if (result.role) {
           sessionStorage.setItem('userRole', result.role);
         }
-        
-        console.log('🚀 Redirecting to dashboard...');
+
         toast.success('Muvaffaqiyatli kirdingiz!');
-        
+
         // Biroz kutib, keyin redirect qilish
         setTimeout(() => {
           window.location.href = '/';
         }, 500);
       } else {
-        const errorMsg = result.detail || result.message || 'Login yoki parol noto\'g\'ri!';
-        console.error('❌ Login failed:', errorMsg);
+        const errorMsg = 'Login yoki parol noto\'g\'ri!';
         setError(errorMsg);
         toast.error(errorMsg);
         setLoading(false);
       }
     } catch (err) {
-      console.error('❌ Network error:', err);
-      const errorMsg = 'Tarmoqda xatolik. Qayta urinib ko\'ring.';
+      const errorMsg = err instanceof Error ? err.message : 'Tarmoqda xatolik. Qayta urinib ko\'ring.';
       setError(errorMsg);
       toast.error(errorMsg);
       setLoading(false);
@@ -68,25 +59,25 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-2">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100 dark:from-surface-950 dark:via-surface-900 dark:to-surface-950 px-2">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl p-4 sm:p-8 w-full max-w-md border border-gray-200 dark:border-gray-800"
+        className="bg-white dark:bg-surface-900 rounded-2xl shadow-sm p-4 sm:p-8 w-full max-w-md border border-surface-200 dark:border-surface-800"
       >
         <div className="mb-8 text-center">
-          <div className="w-20 h-20 mx-auto mb-4 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-lg border border-gray-100 dark:border-slate-700 p-3">
+          <div className="w-20 h-20 mx-auto mb-4 bg-white dark:bg-surface-800 rounded-2xl flex items-center justify-center shadow-sm border border-surface-100 dark:border-surface-700 p-3">
             <img src="/logoicon.png" alt="JoyBor Logo" className="w-full h-full object-contain" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#1E293B] dark:text-white font-sans tracking-tight">Xush kelibsiz!</h2>
-          <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base mt-2 font-sans">JoyBor Admin Paneliga kirish</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-surface-900 dark:text-white font-sans tracking-tight">Xush kelibsiz!</h2>
+          <p className="text-surface-500 dark:text-surface-400 text-sm sm:text-base mt-2 font-sans">JoyBor Admin Paneliga kirish</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#1E293B] dark:text-gray-200 mb-1 font-sans">Login</label>
+            <label className="block text-xs sm:text-sm font-medium text-surface-900 dark:text-surface-200 mb-1 font-sans">Login</label>
             <input
               type="text"
-              className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none font-sans text-sm sm:text-base"
+              className="w-full px-3 sm:px-4 py-2 rounded-xl border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-900 dark:text-white focus:ring-2 focus:ring-brand-500/40 focus:border-brand-600 outline-none font-sans text-sm sm:text-base transition-colors duration-150"
               value={login}
               onChange={e => setLogin(e.target.value)}
               autoFocus
@@ -94,11 +85,11 @@ const Login: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#1E293B] dark:text-gray-200 mb-1 font-sans">Parol</label>
+            <label className="block text-xs sm:text-sm font-medium text-surface-900 dark:text-surface-200 mb-1 font-sans">Parol</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
-                className="w-full px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none font-sans text-sm sm:text-base pr-10"
+                className="w-full px-3 sm:px-4 py-2 rounded-xl border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-900 dark:text-white focus:ring-2 focus:ring-brand-500/40 focus:border-brand-600 outline-none font-sans text-sm sm:text-base pr-10 transition-colors duration-150"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
@@ -106,7 +97,7 @@ const Login: React.FC = () => {
               <button
                 type="button"
                 tabIndex={-1}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-surface-400 hover:text-brand-600 dark:hover:text-brand-400 focus:outline-none transition-colors duration-150"
                 onClick={() => setShowPassword(v => !v)}
                 aria-label={showPassword ? 'Parolni yashirish' : 'Parolni ko\'rsatish'}
               >
@@ -124,10 +115,10 @@ const Login: React.FC = () => {
               </button>
             </div>
           </div>
-          {error && <div className="text-red-600 text-sm text-center">{error}</div>}
+          {error && <div className="text-danger-600 text-sm text-center">{error}</div>}
           <button
             type="submit"
-            className="w-full py-2 rounded-lg bg-blue-600 hover:bg-[#1E293B] text-white font-semibold transition-colors disabled:opacity-60 font-sans text-sm sm:text-base"
+            className="w-full py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold transition-colors duration-150 disabled:opacity-60 font-sans text-sm sm:text-base"
             disabled={loading}
           >
             {loading ? 'Tekshirilmoqda...' : 'Kirish'}

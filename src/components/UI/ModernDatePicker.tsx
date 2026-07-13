@@ -2,7 +2,16 @@ import React from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, parse } from 'date-fns';
+
+const UZ_MONTHS = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const parseYmd = (s: string) => {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+};
+const toYmd = (date: Date) => `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+const toDmy = (date: Date) => `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
+const toMonthYear = (date: Date) => `${UZ_MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 
 interface ModernDatePickerProps {
   selectedDate: string;
@@ -11,7 +20,7 @@ interface ModernDatePickerProps {
 }
 
 const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ selectedDate, onChange, label }) => {
-  const date = parse(selectedDate, 'yyyy-MM-dd', new Date());
+  const date = parseYmd(selectedDate);
 
   const CustomInput = React.forwardRef<HTMLDivElement, any>(({ value, onClick }, ref) => (
     <div className="relative group w-[180px]" onClick={onClick} ref={ref}>
@@ -21,7 +30,7 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ selectedDate, onCha
       <div
         className="pl-11 pr-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-xl font-black text-sm focus:outline-none ring-blue-500/10 hover:border-blue-400 dark:hover:border-blue-500 transition-all cursor-pointer shadow-sm text-center flex items-center justify-center min-h-[44px]"
       >
-        {value || format(new Date(), 'dd/MM/yyyy')}
+        {value || toDmy(new Date())}
       </div>
     </div>
   ));
@@ -35,7 +44,7 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ selectedDate, onCha
       )}
       <DatePicker
         selected={date}
-        onChange={(date: Date) => onChange(format(date, 'yyyy-MM-dd'))}
+        onChange={(date: Date) => onChange(toYmd(date))}
         dateFormat="dd/MM/yyyy"
         customInput={<CustomInput />}
         popperClassName="modern-datepicker-popper"
@@ -55,7 +64,7 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ selectedDate, onCha
               <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
             </button>
             <span className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">
-              {format(date, 'MMMM yyyy')}
+              {toMonthYear(date)}
             </span>
             <button
               onClick={increaseMonth}
