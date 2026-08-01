@@ -27,6 +27,7 @@ export interface Student {
 interface StudentsTableProps {
   students: Student[];
   onExport: () => void;
+  onAdd?: () => void;
 }
 
 const columns = [
@@ -101,7 +102,7 @@ const columns = [
   },
 ];
 
-const StudentsTable: React.FC<StudentsTableProps> = ({ students, onExport }) => {
+const StudentsTable: React.FC<StudentsTableProps> = ({ students, onExport, onAdd }) => {
   const rows: Record<string, unknown>[] = students.map((s, idx) => ({ ...s, _idx: idx }));
 
   return (
@@ -111,6 +112,11 @@ const StudentsTable: React.FC<StudentsTableProps> = ({ students, onExport }) => 
           icon={Users}
           title="Talabalar topilmadi"
           description="Filtrlarni o'zgartirib ko'ring yoki yangi talaba qo'shing."
+          action={
+            onAdd
+              ? { label: "Talaba qo'shish", onClick: onAdd }
+              : undefined
+          }
         />
       ) : (
         <DataTable

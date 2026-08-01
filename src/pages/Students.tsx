@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import Select from 'react-select';
+import { UserPlus } from 'lucide-react';
 import { useStudents, useFloors, useRooms } from '../hooks/api/useApi';
 import { api } from '../data/api';
 import Skeleton from '../components/UI/Skeleton';
 import StudentsTable, { Student } from '../components/students/StudentsTable';
+import CreateStudentModal from '../components/students/CreateStudentModal';
 
 // react-select custom styles for dark mode (brand/surface tokens)
 const selectStyles = {
@@ -77,6 +79,7 @@ const Students: React.FC = () => {
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
   const [roomFilter, setRoomFilter] = useState('');
   const [floorFilter, setFloorFilter] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Fetch real data for filters
   const { data: floorsDataAPI } = useFloors();
@@ -188,6 +191,14 @@ const Students: React.FC = () => {
             )}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => setShowCreateModal(true)}
+          className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
+        >
+          <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+          Talaba qo&apos;shish
+        </button>
       </div>
 
       {/* Filter va qidiruv */}
@@ -292,7 +303,20 @@ const Students: React.FC = () => {
         )}
       </div>
 
-      <StudentsTable students={filteredStudents} onExport={handleExportStudents} />
+      <StudentsTable
+        students={filteredStudents}
+        onExport={handleExportStudents}
+        onAdd={() => setShowCreateModal(true)}
+      />
+
+      <CreateStudentModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          setShowCreateModal(false);
+          refetch();
+        }}
+      />
     </div>
   );
 };
