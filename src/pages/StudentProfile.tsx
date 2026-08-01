@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import BackButton from '../components/UI/BackButton';
 import { BadgeCheck, Calendar, Trash2, Eye, FileText } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { link } from '../data/config';
+import { mediaUrl } from '../data/config';
 import api from '../data/api';
 import { toast } from 'sonner';
 import Select from 'react-select';
@@ -626,9 +626,7 @@ const StudentProfile: React.FC = () => {
           <div className="relative">
             {imagePreview || form.picture ? (
               <img
-                src={imagePreview || (form.picture?.startsWith('http')
-                  ? form.picture
-                  : link + form.picture)}
+                src={imagePreview || mediaUrl(form.picture)}
                 alt={form.name}
                 className="w-32 h-32 object-cover rounded-xl border border-surface-200 dark:border-surface-700"
               />

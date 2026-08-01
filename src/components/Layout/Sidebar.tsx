@@ -74,23 +74,24 @@ const Sidebar: React.FC = () => {
       }}
     >
       {/* Navigation */}
-      <nav className="mt-6 px-3 flex-1">
-        <ul className="space-y-1">
+      <nav className="mt-6 flex-1 overflow-y-auto">
+        <ul className="space-y-1 px-3">
           {navigation.map((item) => {
             const isActive = location.pathname === item.href;
             const Icon = item.icon;
             return (
-              <li key={item.name} className="relative flex items-center">
+              <li key={item.name} className="relative group">
                 {isActive && (
                   <motion.span
                     layoutId="activeIndicator"
-                    className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-brand-600"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    className="absolute -left-3 top-1.5 bottom-1.5 w-1 rounded-r-full bg-brand-600"
                   />
                 )}
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={() => handleNavigation(item.href)}
-                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-150 group ${
+                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-150 ${
                     isActive
                       ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400'
                       : 'text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800'

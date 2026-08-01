@@ -209,23 +209,11 @@ const FloorDetail: React.FC = () => {
       name: `${newRoom.trim()}-xona`,
       floor: floor.id,
       capacity: Number(newRoomCapacity),
-      room_type: '',
       gender: newRoomGender,
-      status: 'EMPTY',
     };
 
     try {
-      // Try /room/create/ first, if it fails with 404/405, try /rooms/
-      try {
-        await post('/room/create/', body);
-      } catch (err) {
-        const status = (err as ApiError)?.response?.status;
-        if (status === 405 || status === 404) {
-          await post('/rooms/', body);
-        } else {
-          throw err;
-        }
-      }
+      await post('/rooms/', body);
 
       setShowRoomModal(false);
       setNewRoom('');

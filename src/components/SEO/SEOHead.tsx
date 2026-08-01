@@ -17,7 +17,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({
   url
 }) => {
   const location = useLocation();
-  const currentUrl = url || `https://admin.joyboronline.uz${location.pathname}`;
+  const currentUrl = url || `https://admin.joy-bor.uz${location.pathname}`;
 
   useEffect(() => {
     // Title o'zgartirish

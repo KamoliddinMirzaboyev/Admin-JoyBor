@@ -168,26 +168,26 @@ const AddLeaderModal: React.FC<AddLeaderModalProps> = ({ isOpen, onClose, floors
           initial={{ opacity: 0, scale: 0.98, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.98, y: 10 }}
-          className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-hidden border border-gray-200 dark:border-gray-700"
+          className="relative bg-white dark:bg-surface-800 rounded-xl shadow-sm w-full max-w-xl max-h-[90vh] overflow-hidden border border-surface-200 dark:border-surface-700"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between p-5 border-b border-surface-100 dark:border-surface-700">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-600 rounded-lg text-white shadow-lg shadow-blue-500/20">
+              <div className="p-2 bg-brand-600 rounded-xl text-white shadow-sm shadow-brand-500/20">
                 <UserPlus className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                <h2 className="text-lg font-bold text-surface-900 dark:text-white">
                   Yangi qavat sardori
                 </h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                <p className="text-xs text-surface-500 dark:text-surface-400 font-medium">
                   Sardor uchun tizimda yangi profil yaratish
                 </p>
               </div>
             </div>
             <button
               onClick={handleClose}
-              className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+              className="p-2 rounded-xl text-surface-400 hover:text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-all"
             >
               <X className="w-5 h-5" />
             </button>
@@ -198,18 +198,18 @@ const AddLeaderModal: React.FC<AddLeaderModalProps> = ({ isOpen, onClose, floors
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Floor Selection */}
               <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">
+                <label className="block text-xs font-bold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-2 ml-1">
                   Tanlangan qavat *
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-surface-400">
                     <Building className="w-4 h-4" />
                   </div>
                   <select
                     value={formData.floor}
                     onChange={(e) => handleInputChange('floor', e.target.value)}
-                    className={`w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all ${
-                      errors.floor ? 'border-red-500' : 'border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
+                    className={`w-full pl-10 pr-4 py-2.5 bg-surface-50 dark:bg-surface-900 border rounded-xl text-sm font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all ${
+                      errors.floor ? 'border-danger-500' : 'border-surface-200 dark:border-surface-700 text-surface-900 dark:text-white'
                     }`}
                   >
                     <option value="">Qavatni tanlang</option>
@@ -221,46 +221,46 @@ const AddLeaderModal: React.FC<AddLeaderModalProps> = ({ isOpen, onClose, floors
                   </select>
                 </div>
                 {errors.floor && (
-                  <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">{errors.floor}</p>
+                  <p className="text-danger-500 text-[11px] font-bold mt-1.5 ml-1">{errors.floor}</p>
                 )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* First Name */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">
+                  <label className="block text-xs font-bold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-2 ml-1">
                     Ism *
                   </label>
                   <input
                     type="text"
                     value={formData.first_name}
                     onChange={(e) => handleInputChange('first_name', e.target.value)}
-                    className={`w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all ${
-                      errors.first_name ? 'border-red-500' : 'border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
+                    className={`w-full px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border rounded-xl text-sm font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all ${
+                      errors.first_name ? 'border-danger-500' : 'border-surface-200 dark:border-surface-700 text-surface-900 dark:text-white'
                     }`}
                     placeholder="Ism"
                   />
                   {errors.first_name && (
-                    <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">{errors.first_name}</p>
+                    <p className="text-danger-500 text-[11px] font-bold mt-1.5 ml-1">{errors.first_name}</p>
                   )}
                 </div>
 
                 {/* Last Name */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">
+                  <label className="block text-xs font-bold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-2 ml-1">
                     Familiya *
                   </label>
                   <input
                     type="text"
                     value={formData.last_name}
                     onChange={(e) => handleInputChange('last_name', e.target.value)}
-                    className={`w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all ${
-                      errors.last_name ? 'border-red-500' : 'border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
+                    className={`w-full px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border rounded-xl text-sm font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all ${
+                      errors.last_name ? 'border-danger-500' : 'border-surface-200 dark:border-surface-700 text-surface-900 dark:text-white'
                     }`}
                     placeholder="Familiya"
                   />
                   {errors.last_name && (
-                    <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">{errors.last_name}</p>
+                    <p className="text-danger-500 text-[11px] font-bold mt-1.5 ml-1">{errors.last_name}</p>
                   )}
                 </div>
               </div>
@@ -268,99 +268,99 @@ const AddLeaderModal: React.FC<AddLeaderModalProps> = ({ isOpen, onClose, floors
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Phone */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">
+                  <label className="block text-xs font-bold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-2 ml-1">
                     Telefon raqam *
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-surface-400">
                       <Phone className="w-4 h-4" />
                     </div>
                     <input
                       type="text"
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className={`w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all ${
-                        errors.phone ? 'border-red-500' : 'border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
+                      className={`w-full pl-10 pr-4 py-2.5 bg-surface-50 dark:bg-surface-900 border rounded-xl text-sm font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all ${
+                        errors.phone ? 'border-danger-500' : 'border-surface-200 dark:border-surface-700 text-surface-900 dark:text-white'
                       }`}
                       placeholder="+998"
                     />
                   </div>
                   {errors.phone && (
-                    <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">{errors.phone}</p>
+                    <p className="text-danger-500 text-[11px] font-bold mt-1.5 ml-1">{errors.phone}</p>
                   )}
                 </div>
 
                 {/* Username */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">
+                  <label className="block text-xs font-bold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-2 ml-1">
                     Username *
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-surface-400">
                       <User className="w-4 h-4" />
                     </div>
                     <input
                       type="text"
                       value={formData.username}
                       onChange={(e) => handleInputChange('username', e.target.value)}
-                      className={`w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all ${
-                        errors.username ? 'border-red-500' : 'border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
+                      className={`w-full pl-10 pr-4 py-2.5 bg-surface-50 dark:bg-surface-900 border rounded-xl text-sm font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all ${
+                        errors.username ? 'border-danger-500' : 'border-surface-200 dark:border-surface-700 text-surface-900 dark:text-white'
                       }`}
                       placeholder="Username"
                     />
                   </div>
                   {errors.username && (
-                    <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">{errors.username}</p>
+                    <p className="text-danger-500 text-[11px] font-bold mt-1.5 ml-1">{errors.username}</p>
                   )}
                 </div>
               </div>
 
               {/* Password */}
               <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">
+                <label className="block text-xs font-bold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-2 ml-1">
                   Parol *
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-surface-400">
                     <Lock className="w-4 h-4" />
                   </div>
                   <input
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={(e) => handleInputChange('password', e.target.value)}
-                    className={`w-full pl-10 pr-12 py-2.5 bg-gray-50 dark:bg-gray-900 border rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all ${
-                      errors.password ? 'border-red-500' : 'border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
+                    className={`w-full pl-10 pr-12 py-2.5 bg-surface-50 dark:bg-surface-900 border rounded-xl text-sm font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all ${
+                      errors.password ? 'border-danger-500' : 'border-surface-200 dark:border-surface-700 text-surface-900 dark:text-white'
                     }`}
                     placeholder="Parol"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-500 transition-colors"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-surface-400 hover:text-brand-500 transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">{errors.password}</p>
+                  <p className="text-danger-500 text-[11px] font-bold mt-1.5 ml-1">{errors.password}</p>
                 )}
               </div>
             </form>
           </div>
 
           {/* Footer */}
-          <div className="flex gap-3 p-6 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex gap-3 p-6 bg-surface-50 dark:bg-surface-900/50 border-t border-surface-100 dark:border-surface-700">
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all active:scale-[0.98]"
+              className="flex-1 py-2.5 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-700 dark:text-surface-300 rounded-xl text-sm font-bold hover:bg-surface-50 dark:hover:bg-surface-700 transition-all active:scale-[0.98]"
             >
               Bekor qilish
             </button>
             <button
               onClick={handleSubmit}
               disabled={createLeaderMutation.isPending}
-              className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-bold hover:bg-brand-700 shadow-sm shadow-brand-500/20 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {createLeaderMutation.isPending ? (
                 <>

@@ -65,7 +65,7 @@ export const useSEO = (pageKey?: SEOPageKey, customData?: {
     }
 
     // URL yangilash
-    const currentUrl = `https://admin.joyboronline.uz${location.pathname}`;
+    const currentUrl = `https://admin.joy-bor.uz${location.pathname}`;
     updateMetaTag('og:url', currentUrl, true);
     updateMetaTag('twitter:url', currentUrl, true);
 

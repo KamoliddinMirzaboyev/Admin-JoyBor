@@ -34,6 +34,9 @@ const Notifications: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'unread' | 'read'>('all');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [createMessage, setCreateMessage] = useState('');
+  const [createTarget, setCreateTarget] = useState<'all_students' | 'all_admins' | 'specific_user'>('all_students');
 
   const queryClient = useQueryClient();
 
@@ -79,6 +82,24 @@ const Notifications: React.FC = () => {
     onSettled: () => {
       // Always refetch after error or success
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const createNotificationMutation = useMutation({
+    mutationFn: () =>
+      api.createAdminNotification({
+        message: createMessage.trim(),
+        target_type: createTarget,
+        is_active: true,
+      }),
+    onSuccess: () => {
+      toast.success('Bildirishnoma yuborildi');
+      setShowCreate(false);
+      setCreateMessage('');
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+    onError: (err: Error) => {
+      toast.error(err?.message || 'Yuborishda xatolik');
     },
   });
 
@@ -165,7 +186,13 @@ const Notifications: React.FC = () => {
             <p className="text-surface-500 dark:text-surface-400 mt-1">Sizga kelgan so'nggi xabarlar va bildirishnomalar</p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setShowCreate((v) => !v)}
+              className="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold hover:bg-brand-700 transition-colors duration-150"
+            >
+              Yangi bildirishnoma
+            </button>
             <button
               onClick={() => markAllAsReadMutation.mutate()}
               className="px-4 py-2 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-xl text-sm font-semibold text-surface-700 dark:text-surface-200 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors duration-150 flex items-center gap-2"
@@ -175,6 +202,40 @@ const Notifications: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {showCreate && (
+          <div className="bg-white dark:bg-surface-800 rounded-2xl shadow-sm border border-surface-200 dark:border-surface-700 p-4 mb-6 space-y-3">
+            <label className="block text-sm font-semibold text-surface-700 dark:text-surface-200">
+              Xabar matni
+            </label>
+            <textarea
+              value={createMessage}
+              onChange={(e) => setCreateMessage(e.target.value)}
+              rows={3}
+              className="w-full px-4 py-3 rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900 outline-none focus:ring-2 focus:ring-brand-500/40"
+              placeholder="Talabalarga yuboriladigan xabar..."
+            />
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+              <select
+                value={createTarget}
+                onChange={(e) =>
+                  setCreateTarget(e.target.value as 'all_students' | 'all_admins' | 'specific_user')
+                }
+                className="px-3 py-2 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 text-sm"
+              >
+                <option value="all_students">Barcha talabalar</option>
+                <option value="all_admins">Barcha adminlar</option>
+              </select>
+              <button
+                disabled={!createMessage.trim() || createNotificationMutation.isPending}
+                onClick={() => createNotificationMutation.mutate()}
+                className="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold disabled:opacity-50 hover:bg-brand-700"
+              >
+                {createNotificationMutation.isPending ? 'Yuborilmoqda...' : 'Yuborish'}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white dark:bg-surface-800 rounded-2xl shadow-sm border border-surface-200 dark:border-surface-700 p-4 mb-6 flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">

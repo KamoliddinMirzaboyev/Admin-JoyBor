@@ -24,11 +24,11 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ selectedDate, onCha
 
   const CustomInput = React.forwardRef<HTMLDivElement, any>(({ value, onClick }, ref) => (
     <div className="relative group w-[180px]" onClick={onClick} ref={ref}>
-      <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1 bg-blue-50 dark:bg-blue-900/30 rounded group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors z-10 pointer-events-none">
-        <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1 bg-brand-50 dark:bg-brand-900/30 rounded group-hover:bg-brand-100 dark:group-hover:bg-brand-900/50 transition-colors z-10 pointer-events-none">
+        <Calendar className="h-4 w-4 text-brand-600 dark:text-brand-400" />
       </div>
       <div
-        className="pl-11 pr-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-xl font-black text-sm focus:outline-none ring-blue-500/10 hover:border-blue-400 dark:hover:border-blue-500 transition-all cursor-pointer shadow-sm text-center flex items-center justify-center min-h-[44px]"
+        className="pl-11 pr-4 py-2.5 bg-white dark:bg-surface-800 text-surface-900 dark:text-white border border-surface-200 dark:border-surface-700 rounded-xl font-black text-sm focus:outline-none ring-brand-500/10 hover:border-brand-400 dark:hover:border-brand-500 transition-all cursor-pointer shadow-sm text-center flex items-center justify-center min-h-[44px]"
       >
         {value || toDmy(new Date())}
       </div>
@@ -38,7 +38,7 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ selectedDate, onCha
   return (
     <div className="relative flex flex-col gap-1.5">
       {label && (
-        <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">
+        <label className="text-[10px] font-black text-surface-400 dark:text-surface-500 uppercase tracking-widest ml-1">
           {label}
         </label>
       )}
@@ -55,23 +55,23 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ selectedDate, onCha
           prevMonthButtonDisabled,
           nextMonthButtonDisabled,
         }) => (
-          <div className="flex items-center justify-between px-2 py-2 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between px-2 py-2 bg-white dark:bg-surface-800 border-b border-surface-100 dark:border-surface-700">
             <button
               onClick={decreaseMonth}
               disabled={prevMonthButtonDisabled}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
+              className="p-1.5 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-xl transition-colors disabled:opacity-50"
             >
-              <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <ChevronLeft className="h-4 w-4 text-surface-600 dark:text-surface-400" />
             </button>
-            <span className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">
+            <span className="text-sm font-black text-surface-900 dark:text-white uppercase tracking-wider">
               {toMonthYear(date)}
             </span>
             <button
               onClick={increaseMonth}
               disabled={nextMonthButtonDisabled}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
+              className="p-1.5 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-xl transition-colors disabled:opacity-50"
             >
-              <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <ChevronRight className="h-4 w-4 text-surface-600 dark:text-surface-400" />
             </button>
           </div>
         )}

@@ -74,7 +74,7 @@ export default function ApplicationActions({ application, id, onChanged }: { app
     }
     setLoading(true);
     try {
-      await api.rejectApplication(id, { status: 'Rejected', admin_comment: comment.trim() });
+      await api.rejectApplication(id, { admin_comment: comment.trim() });
       toast.success('Ariza rad etildi!');
       setShowRejectModal(false);
       setComment('');

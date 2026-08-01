@@ -9,11 +9,11 @@ interface BadgeProps {
 }
 
 const toneClasses: Record<BadgeTone, string> = {
-  success: 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400',
-  warning: 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400',
-  danger: 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400',
-  info: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400',
-  neutral: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  success: 'bg-success-50 text-success-700 dark:bg-success-900/20 dark:text-success-400',
+  warning: 'bg-warning-50 text-warning-700 dark:bg-warning-900/20 dark:text-warning-400',
+  danger: 'bg-danger-50 text-danger-700 dark:bg-danger-900/20 dark:text-danger-400',
+  info: 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-400',
+  neutral: 'bg-surface-100 text-surface-700 dark:bg-surface-800 dark:text-surface-300',
 };
 
 const Badge: React.FC<BadgeProps> = ({ tone = 'neutral', children, className = '' }) => (

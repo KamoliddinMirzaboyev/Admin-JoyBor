@@ -81,26 +81,26 @@ const DataTable: React.FC<DataTableProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-card border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-surface-800 rounded-xl shadow-card border border-surface-200 dark:border-surface-700">
       {/* Header */}
-      <div className="p-3 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="p-3 sm:p-6 border-b border-surface-200 dark:border-surface-700">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
           <div className="flex items-center space-x-2 sm:space-x-4">
             {searchable && (
               <div className="relative w-full max-w-xs">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-surface-400 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Qidirish..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base w-full"
+                  className="pl-10 pr-4 py-2 border border-surface-300 dark:border-surface-600 rounded-xl bg-white dark:bg-surface-700 text-surface-900 dark:text-white placeholder-surface-500 dark:placeholder-surface-400 focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm sm:text-base w-full"
                 />
               </div>
             )}
 
             {filterable && (
-              <button className="flex items-center space-x-2 px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-xs sm:text-sm">
+              <button className="flex items-center space-x-2 px-3 sm:px-4 py-2 border border-surface-300 dark:border-surface-600 rounded-xl bg-white dark:bg-surface-700 text-surface-700 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-600 transition-colors text-xs sm:text-sm">
                 <Filter className="w-4 h-4" />
                 <span>Filter</span>
               </button>
@@ -111,7 +111,7 @@ const DataTable: React.FC<DataTableProps> = ({
             {actions}
             {!hideExportButton && onExport && (
               <button
-                className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-xs sm:text-sm"
+                className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition-colors text-xs sm:text-sm"
                 onClick={onExport}
                 type="button"
               >
@@ -126,19 +126,19 @@ const DataTable: React.FC<DataTableProps> = ({
       {/* Table */}
       <div className="overflow-x-auto max-h-[calc(100vh-300px)] overflow-y-auto custom-scrollbar">
         <table className="w-full min-w-[600px] border-separate border-spacing-0">
-          <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10 shadow-sm">
+          <thead className="bg-surface-50 dark:bg-surface-700 sticky top-0 z-10 shadow-sm">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-2 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 ${column.sortable ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-200' : ''
+                  className={`px-2 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-surface-500 dark:text-surface-400 uppercase tracking-wider border-b border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-700 ${column.sortable ? 'cursor-pointer hover:text-surface-700 dark:hover:text-surface-200' : ''
                     }`}
                   onClick={() => column.sortable && handleSort(column.key)}
                 >
                   <div className="flex items-center space-x-1">
                     <span>{column.title}</span>
                     {column.sortable && sortKey === column.key && (
-                      <span className="text-primary-500">
+                      <span className="text-brand-500">
                         {sortDirection === 'asc' ? '↑' : '↓'}
                       </span>
                     )}
@@ -147,19 +147,19 @@ const DataTable: React.FC<DataTableProps> = ({
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="bg-white dark:bg-surface-800 divide-y divide-surface-200 dark:divide-surface-700">
             {paginatedData.map((row, index) => (
               <motion.tr
                 key={index}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${onRowClick ? 'cursor-pointer' : ''
+                className={`hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors ${onRowClick ? 'cursor-pointer' : ''
                   }`}
                 onClick={() => onRowClick?.(row)}
               >
                 {columns.map((column) => (
-                  <td key={column.key} className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-white">
+                  <td key={column.key} className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-surface-900 dark:text-white">
                     {column.render ? column.render(row[column.key], row) : String(row[column.key])}
                   </td>
                 ))}
@@ -171,8 +171,8 @@ const DataTable: React.FC<DataTableProps> = ({
 
       {/* Pagination */}
       {pagination && totalPages > 1 && (
-        <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+        <div className="px-6 py-3 border-t border-surface-200 dark:border-surface-700 flex items-center justify-between">
+          <div className="flex items-center text-sm text-surface-700 dark:text-surface-300">
             <span>
               {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, sortedData.length)} of{' '}
               {sortedData.length} natija
@@ -183,7 +183,7 @@ const DataTable: React.FC<DataTableProps> = ({
             <button
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
-              className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="p-2 rounded-xl border border-surface-300 dark:border-surface-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -195,9 +195,9 @@ const DataTable: React.FC<DataTableProps> = ({
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 text-sm rounded-lg transition-colors ${currentPage === page
-                      ? 'bg-primary-600 text-white'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    className={`px-3 py-1 text-sm rounded-xl transition-colors ${currentPage === page
+                      ? 'bg-brand-600 text-white'
+                      : 'text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700'
                       }`}
                   >
                     {page}
@@ -209,7 +209,7 @@ const DataTable: React.FC<DataTableProps> = ({
             <button
               onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
-              className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="p-2 rounded-xl border border-surface-300 dark:border-surface-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

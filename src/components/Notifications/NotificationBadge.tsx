@@ -28,10 +28,10 @@ const NotificationBadge: React.FC<NotificationBadgeProps> = ({
   };
 
   const variantClasses = {
-    default: 'bg-blue-500 text-white',
-    success: 'bg-green-500 text-white',
-    warning: 'bg-yellow-500 text-white',
-    error: 'bg-red-500 text-white'
+    default: 'bg-brand-500 text-white',
+    success: 'bg-success-500 text-white',
+    warning: 'bg-warning-500 text-white',
+    error: 'bg-danger-500 text-white'
   };
 
   const iconSizes = {

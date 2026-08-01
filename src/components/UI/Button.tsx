@@ -9,12 +9,12 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-primary-600 text-white hover:bg-primary-700',
+  primary: 'bg-brand-600 text-white hover:bg-brand-700',
   secondary:
-    'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
+    'bg-surface-100 text-surface-700 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700',
   ghost:
-    'bg-transparent text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
-  danger: 'bg-red-600 text-white hover:bg-red-700',
+    'bg-transparent text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800',
+  danger: 'bg-danger-600 text-white hover:bg-danger-700',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -30,7 +30,7 @@ const Button: React.FC<ButtonProps> = ({
   ...rest
 }) => (
   <button
-    className={`inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+    className={`inline-flex items-center justify-center rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
     {...rest}
   >
     {children}

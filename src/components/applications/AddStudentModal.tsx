@@ -95,6 +95,14 @@ export default function AddStudentModal({ application, open, onClose, onSuccess 
         return;
       }
 
+      const studentId = matchingStudent.id as number;
+
+      // Xona biriktirish — maxsus API endpoint
+      await api.assignRoom(studentId, {
+        floor: selectedFloor,
+        room: selectedRoom,
+      });
+
       const formData = new FormData();
       formData.append('name', studentForm.name);
       formData.append('last_name', studentForm.last_name);
@@ -106,14 +114,12 @@ export default function AddStudentModal({ application, open, onClose, onSuccess 
       formData.append('course', studentForm.course || '1-kurs');
       formData.append('gender', studentForm.gender);
       formData.append('phone', studentForm.phone);
-      formData.append('placement_status', 'Qabul qilindi');
+      formData.append('placement_status', 'Joylashdi');
       formData.append('is_active', 'true');
-      formData.append('floor', String(selectedFloor));
-      formData.append('room', String(selectedRoom));
 
-      await api.updateStudent(matchingStudent.id as number, formData);
+      await api.updateStudent(studentId, formData);
 
-      toast.success('Talaba muvaffaqiyatli yangilandi!');
+      toast.success('Talaba xonaga biriktirildi!');
       onSuccess();
       handleClose();
     } catch (err) {

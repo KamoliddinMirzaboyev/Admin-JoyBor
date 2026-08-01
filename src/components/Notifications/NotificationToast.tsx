@@ -47,45 +47,45 @@ const NotificationToast: React.FC<NotificationToastProps> = ({
   const getIcon = () => {
     switch (type) {
       case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
+        return <CheckCircle className="w-5 h-5 text-success-500" />;
       case 'error':
-        return <AlertCircle className="w-5 h-5 text-red-500" />;
+        return <AlertCircle className="w-5 h-5 text-danger-500" />;
       case 'warning':
-        return <AlertCircle className="w-5 h-5 text-yellow-500" />;
+        return <AlertCircle className="w-5 h-5 text-warning-500" />;
       case 'info':
-        return <Info className="w-5 h-5 text-blue-500" />;
+        return <Info className="w-5 h-5 text-brand-500" />;
       default:
-        return <Bell className="w-5 h-5 text-gray-500" />;
+        return <Bell className="w-5 h-5 text-surface-500" />;
     }
   };
 
   const getBorderColor = () => {
     switch (type) {
       case 'success':
-        return 'border-l-green-500';
+        return 'border-l-success-500';
       case 'error':
-        return 'border-l-red-500';
+        return 'border-l-danger-500';
       case 'warning':
-        return 'border-l-yellow-500';
+        return 'border-l-warning-500';
       case 'info':
-        return 'border-l-blue-500';
+        return 'border-l-brand-500';
       default:
-        return 'border-l-gray-500';
+        return 'border-l-surface-500';
     }
   };
 
   const getBackgroundColor = () => {
     switch (type) {
       case 'success':
-        return 'bg-green-50 dark:bg-green-900/20';
+        return 'bg-success-50 dark:bg-success-900/20';
       case 'error':
-        return 'bg-red-50 dark:bg-red-900/20';
+        return 'bg-danger-50 dark:bg-danger-900/20';
       case 'warning':
-        return 'bg-yellow-50 dark:bg-yellow-900/20';
+        return 'bg-warning-50 dark:bg-warning-900/20';
       case 'info':
-        return 'bg-blue-50 dark:bg-blue-900/20';
+        return 'bg-brand-50 dark:bg-brand-900/20';
       default:
-        return 'bg-gray-50 dark:bg-gray-700';
+        return 'bg-surface-50 dark:bg-surface-700';
     }
   };
 
@@ -102,7 +102,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 300, scale: 0.8 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className={`relative w-80 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden ${getBackgroundColor()}`}
+      className={`relative w-80 bg-white dark:bg-surface-800 rounded-xl shadow-sm border border-surface-200 dark:border-surface-700 overflow-hidden ${getBackgroundColor()}`}
     >
       {/* Progress bar */}
       {duration > 0 && (
@@ -122,26 +122,26 @@ const NotificationToast: React.FC<NotificationToastProps> = ({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <h4 className="font-semibold text-gray-900 dark:text-white text-sm leading-tight">
+              <h4 className="font-semibold text-surface-900 dark:text-white text-sm leading-tight">
                 {title}
               </h4>
               <button
                 onClick={() => onClose(id)}
-                className="flex-shrink-0 p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="flex-shrink-0 p-1 rounded-xl text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {message && (
-              <p className="text-gray-600 dark:text-gray-300 text-sm mt-1 leading-relaxed">
+              <p className="text-surface-600 dark:text-surface-300 text-sm mt-1 leading-relaxed">
                 {message}
               </p>
             )}
 
             <div className="flex items-center justify-between mt-3">
               {timestamp && (
-                <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-1 text-xs text-surface-500 dark:text-surface-400">
                   <Clock className="w-3 h-3" />
                   <span>{formatTime(timestamp)}</span>
                 </div>
@@ -150,7 +150,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({
               {action && (
                 <button
                   onClick={action.onClick}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-xl transition-colors"
                 >
                   <ExternalLink className="w-3 h-3" />
                   {action.label}

@@ -226,17 +226,17 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'booking':
-        return <div className="w-3 h-3 bg-blue-500 rounded-full"></div>;
+        return <div className="w-3 h-3 bg-brand-500 rounded-full"></div>;
       case 'payment':
-        return <div className="w-3 h-3 bg-green-500 rounded-full"></div>;
+        return <div className="w-3 h-3 bg-success-500 rounded-full"></div>;
       case 'maintenance':
-        return <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>;
+        return <div className="w-3 h-3 bg-warning-500 rounded-full"></div>;
       case 'system':
-        return <div className="w-3 h-3 bg-purple-500 rounded-full"></div>;
+        return <div className="w-3 h-3 bg-info-500 rounded-full"></div>;
       case 'general':
-        return <div className="w-3 h-3 bg-gray-500 rounded-full"></div>;
+        return <div className="w-3 h-3 bg-surface-500 rounded-full"></div>;
       default:
-        return <div className="w-3 h-3 bg-gray-400 rounded-full"></div>;
+        return <div className="w-3 h-3 bg-surface-400 rounded-full"></div>;
     }
   };
 
@@ -267,26 +267,26 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+        className="relative bg-white dark:bg-surface-800 rounded-2xl shadow-sm w-full max-w-4xl max-h-[90vh] overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-surface-200 dark:border-surface-700">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-500 rounded-lg">
+            <div className="p-2 bg-brand-500 rounded-xl">
               <Settings className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h2 className="text-xl font-bold text-surface-900 dark:text-white">
                 Bildirishnoma sozlamalari
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-surface-600 dark:text-surface-400">
                 Bildirishnomalar va xabarlar sozlamalari
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            className="p-2 rounded-xl bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -294,22 +294,22 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
 
         <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
           {/* Global Settings */}
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="p-6 border-b border-surface-200 dark:border-surface-700">
+            <h3 className="text-lg font-semibold text-surface-900 dark:text-white mb-4">
               Umumiy sozlamalar
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Main Toggle */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                <div className="flex items-center justify-between p-4 bg-surface-50 dark:bg-surface-700 rounded-xl">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-500 rounded-lg">
+                    <div className="p-2 bg-brand-500 rounded-xl">
                       <Bell className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white">Bildirishnomalar</h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Barcha bildirishnomalarni yoqish/o'chirish</p>
+                      <h4 className="font-medium text-surface-900 dark:text-white">Bildirishnomalar</h4>
+                      <p className="text-sm text-surface-600 dark:text-surface-400">Barcha bildirishnomalarni yoqish/o'chirish</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -319,16 +319,16 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
                       onChange={(e) => handleGlobalSettingChange('enableNotifications', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-surface-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 dark:peer-focus:ring-brand-800 rounded-full peer dark:bg-surface-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-surface-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-surface-600 peer-checked:bg-brand-600"></div>
                   </label>
                 </div>
 
                 {/* Notification Types */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
                     <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-blue-500" />
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">Email bildirishnomalar</span>
+                      <Mail className="w-4 h-4 text-brand-500" />
+                      <span className="text-sm font-medium text-surface-900 dark:text-white">Email bildirishnomalar</span>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -337,14 +337,14 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
                         onChange={(e) => handleGlobalSettingChange('enableEmail', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      <div className="w-9 h-5 bg-surface-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 dark:peer-focus:ring-brand-800 rounded-full peer dark:bg-surface-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-surface-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-surface-600 peer-checked:bg-brand-600"></div>
                     </label>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
                     <div className="flex items-center gap-2">
-                      <Bell className="w-4 h-4 text-green-500" />
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">Push bildirishnomalar</span>
+                      <Bell className="w-4 h-4 text-success-500" />
+                      <span className="text-sm font-medium text-surface-900 dark:text-white">Push bildirishnomalar</span>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -353,14 +353,14 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
                         onChange={(e) => handleGlobalSettingChange('enablePush', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+                      <div className="w-9 h-5 bg-surface-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 dark:peer-focus:ring-brand-800 rounded-full peer dark:bg-surface-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-surface-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-surface-600 peer-checked:bg-success-600"></div>
                     </label>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
                     <div className="flex items-center gap-2">
-                      <Smartphone className="w-4 h-4 text-purple-500" />
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">SMS bildirishnomalar</span>
+                      <Smartphone className="w-4 h-4 text-info-500" />
+                      <span className="text-sm font-medium text-surface-900 dark:text-white">SMS bildirishnomalar</span>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -369,7 +369,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
                         onChange={(e) => handleGlobalSettingChange('enableSMS', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
+                      <div className="w-9 h-5 bg-surface-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 dark:peer-focus:ring-brand-800 rounded-full peer dark:bg-surface-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-surface-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-surface-600 peer-checked:bg-info-600"></div>
                     </label>
                   </div>
                 </div>
@@ -377,9 +377,9 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
 
               {/* Quiet Hours */}
               <div className="space-y-4">
-                <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                <div className="p-4 bg-surface-50 dark:bg-surface-700 rounded-xl">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-900 dark:text-white">Sokin vaqt</h4>
+                    <h4 className="font-medium text-surface-900 dark:text-white">Sokin vaqt</h4>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
@@ -387,32 +387,32 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
                         onChange={(e) => handleQuietHoursChange('enabled', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      <div className="w-9 h-5 bg-surface-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 dark:peer-focus:ring-brand-800 rounded-full peer dark:bg-surface-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-surface-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-surface-600 peer-checked:bg-brand-600"></div>
                     </label>
                   </div>
                   
                   {globalSettings.quietHours.enabled && (
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-xs font-medium text-surface-700 dark:text-surface-300 mb-1">
                           Boshlash vaqti
                         </label>
                         <input
                           type="time"
                           value={globalSettings.quietHours.start}
                           onChange={(e) => handleQuietHoursChange('start', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-xl bg-white dark:bg-surface-800 text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-xs font-medium text-surface-700 dark:text-surface-300 mb-1">
                           Tugash vaqti
                         </label>
                         <input
                           type="time"
                           value={globalSettings.quietHours.end}
                           onChange={(e) => handleQuietHoursChange('end', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-xl bg-white dark:bg-surface-800 text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                         />
                       </div>
                     </div>
@@ -421,8 +421,8 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
 
                 {/* Sound and Vibration */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">Ovoz</span>
+                  <div className="flex items-center justify-between p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                    <span className="text-sm font-medium text-surface-900 dark:text-white">Ovoz</span>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
@@ -430,12 +430,12 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
                         onChange={(e) => handleGlobalSettingChange('soundEnabled', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      <div className="w-9 h-5 bg-surface-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 dark:peer-focus:ring-brand-800 rounded-full peer dark:bg-surface-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-surface-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-surface-600 peer-checked:bg-brand-600"></div>
                     </label>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">Titrash</span>
+                  <div className="flex items-center justify-between p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                    <span className="text-sm font-medium text-surface-900 dark:text-white">Titrash</span>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
@@ -443,7 +443,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
                         onChange={(e) => handleGlobalSettingChange('vibrationEnabled', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      <div className="w-9 h-5 bg-surface-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 dark:peer-focus:ring-brand-800 rounded-full peer dark:bg-surface-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-surface-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-surface-600 peer-checked:bg-brand-600"></div>
                     </label>
                   </div>
                 </div>
@@ -453,24 +453,24 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
 
           {/* Specific Preferences */}
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <h3 className="text-lg font-semibold text-surface-900 dark:text-white mb-4">
               Maxsus sozlamalar
             </h3>
             
             <div className="space-y-4">
               {preferences.map((preference) => (
-                <div key={preference.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-xl">
+                <div key={preference.id} className="p-4 border border-surface-200 dark:border-surface-700 rounded-xl">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-start gap-3">
                       {getCategoryIcon(preference.category)}
                       <div>
-                        <h4 className="font-medium text-gray-900 dark:text-white">
+                        <h4 className="font-medium text-surface-900 dark:text-white">
                           {preference.title}
                         </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-surface-600 dark:text-surface-400">
                           {preference.description}
                         </p>
-                        <span className="inline-block mt-1 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+                        <span className="inline-block mt-1 px-2 py-1 text-xs bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-400 rounded">
                           {getCategoryName(preference.category)}
                         </span>
                       </div>
@@ -478,10 +478,10 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
                   </div>
                   
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="flex items-center justify-between p-2 bg-surface-50 dark:bg-surface-700 rounded-xl">
                       <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-blue-500" />
-                        <span className="text-xs font-medium text-gray-900 dark:text-white">Email</span>
+                        <Mail className="w-4 h-4 text-brand-500" />
+                        <span className="text-xs font-medium text-surface-900 dark:text-white">Email</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -491,14 +491,14 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
                           disabled={!globalSettings.enableEmail}
                           className="sr-only peer"
                         />
-                        <div className="w-7 h-4 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 peer-disabled:opacity-50"></div>
+                        <div className="w-7 h-4 bg-surface-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-300 dark:peer-focus:ring-brand-800 rounded-full peer dark:bg-surface-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-surface-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all dark:border-surface-600 peer-checked:bg-brand-600 peer-disabled:opacity-50"></div>
                       </label>
                     </div>
 
-                    <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="flex items-center justify-between p-2 bg-surface-50 dark:bg-surface-700 rounded-xl">
                       <div className="flex items-center gap-2">
-                        <Bell className="w-4 h-4 text-green-500" />
-                        <span className="text-xs font-medium text-gray-900 dark:text-white">Push</span>
+                        <Bell className="w-4 h-4 text-success-500" />
+                        <span className="text-xs font-medium text-surface-900 dark:text-white">Push</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -508,14 +508,14 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
                           disabled={!globalSettings.enablePush}
                           className="sr-only peer"
                         />
-                        <div className="w-7 h-4 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all dark:border-gray-600 peer-checked:bg-green-600 peer-disabled:opacity-50"></div>
+                        <div className="w-7 h-4 bg-surface-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-300 dark:peer-focus:ring-brand-800 rounded-full peer dark:bg-surface-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-surface-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all dark:border-surface-600 peer-checked:bg-success-600 peer-disabled:opacity-50"></div>
                       </label>
                     </div>
 
-                    <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="flex items-center justify-between p-2 bg-surface-50 dark:bg-surface-700 rounded-xl">
                       <div className="flex items-center gap-2">
-                        <Smartphone className="w-4 h-4 text-purple-500" />
-                        <span className="text-xs font-medium text-gray-900 dark:text-white">SMS</span>
+                        <Smartphone className="w-4 h-4 text-info-500" />
+                        <span className="text-xs font-medium text-surface-900 dark:text-white">SMS</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -525,7 +525,7 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
                           disabled={!globalSettings.enableSMS}
                           className="sr-only peer"
                         />
-                        <div className="w-7 h-4 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600 peer-disabled:opacity-50"></div>
+                        <div className="w-7 h-4 bg-surface-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-300 dark:peer-focus:ring-brand-800 rounded-full peer dark:bg-surface-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-surface-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all dark:border-surface-600 peer-checked:bg-info-600 peer-disabled:opacity-50"></div>
                       </label>
                     </div>
                   </div>
@@ -536,10 +536,10 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+        <div className="flex items-center justify-between p-6 border-t border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-700/50">
           <button
             onClick={handleReset}
-            className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium transition-colors"
+            className="px-4 py-2 text-surface-600 dark:text-surface-400 hover:text-surface-800 dark:hover:text-surface-200 font-medium transition-colors"
           >
             Tiklash
           </button>
@@ -547,14 +547,14 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ isOpen, onC
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="px-6 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg font-medium transition-colors"
+              className="px-6 py-2 text-surface-600 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-600 rounded-xl font-medium transition-colors"
             >
               Bekor qilish
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="w-4 h-4" />
               {isSaving ? 'Saqlanmoqda...' : 'Saqlash'}
