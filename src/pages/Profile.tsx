@@ -160,20 +160,40 @@ const Profile: React.FC = () => {
   }
   if (error || !admin) return <div className="text-center py-10 text-danger-600 dark:text-danger-400">Admin ma'lumotlarini yuklashda xatolik yuz berdi.</div>;
 
-  const handlePasswordChange = (e: React.FormEvent) => {
+  const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
       setPasswordError('Parollar mos emas');
       return;
     }
+    if (newPassword.length < 6) {
+      setPasswordError("Yangi parol kamida 6 ta belgi bo'lsin");
+      return;
+    }
     setPasswordError('');
-    setPasswordSuccess(true);
-    toast.success('Parol muvaffaqiyatli o\'zgartirildi!');
-    setTimeout(() => setPasswordSuccess(false), 2000);
-    setShowPasswordForm(false);
-    setOldPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    setPasswordSuccess(false);
+    try {
+      // API da alohida change-password yo'q — /me/ orqali urinish (backend qo'llab-quvvatlasa)
+      await patch('/me/', {
+        old_password: oldPassword,
+        password: newPassword,
+        new_password: newPassword,
+      });
+      setPasswordSuccess(true);
+      toast.success("Parol muvaffaqiyatli o'zgartirildi!");
+      setTimeout(() => setPasswordSuccess(false), 2000);
+      setShowPasswordForm(false);
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Parolni o'zgartirish mumkin emas (API endpoint yo'q yoki ruxsat berilmagan)";
+      setPasswordError(message);
+      toast.error(message);
+    }
   };
 
   const handleLogout = () => {

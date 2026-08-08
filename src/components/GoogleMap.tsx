@@ -4,7 +4,7 @@ import { MapPin, Navigation, AlertCircle, RefreshCw } from 'lucide-react';
 // Global type declaration
 declare global {
   interface Window {
-    google: any;
+    google: unknown;
     googleMapsReady: boolean;
     initGoogleMaps: () => void;
   }
@@ -85,7 +85,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         }
       });
 
-      mapInstance.addListener('click', (event: any) => {
+      mapInstance.addListener('click', (event: unknown) => {
         if (event.latLng) {
           const lat = event.latLng.lat();
           const lng = event.latLng.lng();
@@ -170,7 +170,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
 
           if (onLocationSelect) {
             const geocoder = new window.google.maps.Geocoder();
-            geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
+            geocoder.geocode({ location: { lat, lng } }, (results: unknown, status: unknown) => {
               const address = (status === 'OK' && results?.[0])
                 ? results[0].formatted_address
                 : `${lat.toFixed(6)}, ${lng.toFixed(6)}`;

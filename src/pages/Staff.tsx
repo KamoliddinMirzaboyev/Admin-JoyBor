@@ -86,9 +86,11 @@ const Staff: React.FC = () => {
     queryFn: () => api.getStaff({ search, position: positionFilter })
   });
 
-  const staffList: StaffMember[] = Array.isArray((staffData as { results?: StaffMember[] })?.results)
-    ? (staffData as { results: StaffMember[] }).results
-    : [];
+  const staffList: StaffMember[] = Array.isArray(staffData)
+    ? (staffData as StaffMember[])
+    : Array.isArray((staffData as { results?: StaffMember[] })?.results)
+      ? (staffData as { results: StaffMember[] }).results
+      : [];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;

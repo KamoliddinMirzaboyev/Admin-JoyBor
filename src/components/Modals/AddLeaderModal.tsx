@@ -58,7 +58,7 @@ const AddLeaderModal: React.FC<AddLeaderModalProps> = ({ isOpen, onClose, floors
       queryClient.invalidateQueries({ queryKey: ['floor-leaders'] });
       handleClose();
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const errorData = error?.response?.data;
       const errorMessage = errorData?.detail || 
                           errorData?.message || 

@@ -3,15 +3,15 @@ type EventType = 'student-updated' | 'payment-updated' | 'application-updated' |
 
 interface GlobalEvent {
   type: EventType;
-  data?: any;
+  data?: unknown;
   timestamp: number;
 }
 
 class GlobalEventManager {
-  private listeners: Map<EventType, Set<(data?: any) => void>> = new Map();
+  private listeners: Map<EventType, Set<(data?: unknown) => void>> = new Map();
 
   // Subscribe to events
-  subscribe(eventType: EventType, callback: (data?: any) => void) {
+  subscribe(eventType: EventType, callback: (data?: unknown) => void) {
     if (!this.listeners.has(eventType)) {
       this.listeners.set(eventType, new Set());
     }
@@ -24,7 +24,7 @@ class GlobalEventManager {
   }
 
   // Emit events
-  emit(eventType: EventType, data?: any) {
+  emit(eventType: EventType, data?: unknown) {
     const event: GlobalEvent = {
       type: eventType,
       data,
@@ -74,11 +74,11 @@ if (typeof window !== 'undefined') {
 }
 
 // Helper functions for common events
-export const emitStudentUpdate = (data?: any) => globalEvents.emit('student-updated', data);
-export const emitPaymentUpdate = (data?: any) => globalEvents.emit('payment-updated', data);
-export const emitApplicationUpdate = (data?: any) => globalEvents.emit('application-updated', data);
-export const emitSettingsUpdate = (data?: any) => globalEvents.emit('settings-updated', data);
-export const emitRoomUpdate = (data?: any) => globalEvents.emit('room-updated', data);
+export const emitStudentUpdate = (data?: unknown) => globalEvents.emit('student-updated', data);
+export const emitPaymentUpdate = (data?: unknown) => globalEvents.emit('payment-updated', data);
+export const emitApplicationUpdate = (data?: unknown) => globalEvents.emit('application-updated', data);
+export const emitSettingsUpdate = (data?: unknown) => globalEvents.emit('settings-updated', data);
+export const emitRoomUpdate = (data?: unknown) => globalEvents.emit('room-updated', data);
 
 // Hook for React components
 export const useGlobalEvents = () => {
