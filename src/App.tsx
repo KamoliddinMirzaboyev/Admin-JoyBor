@@ -22,6 +22,7 @@ const Notifications = React.lazy(() => import("./pages/Notifications"));
 const Profile = React.lazy(() => import("./pages/Profile"));
 const StudentProfile = React.lazy(() => import("./pages/StudentProfile"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
+const Reports = React.lazy(() => import("./pages/Reports"));
 
 // Loading komponenti
 const LoadingSpinner = () => (
@@ -79,6 +80,7 @@ function App() {
             <Route path="rooms" element={withSuspense(Rooms)} />
             <Route path="rooms/:floorId" element={withSuspense(FloorDetail)} />
             <Route path="attendance" element={withSuspense(Attendance)} />
+            <Route path="reports" element={withSuspense(Reports)} />
             <Route path="applications" element={withSuspense(Applications)} />
             <Route path="applications/:id" element={withSuspense(ApplicationDetail)} />
             <Route path="staff" element={withSuspense(Staff)} />

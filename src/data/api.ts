@@ -297,7 +297,10 @@ export const api = {
     floor?: number;
     page?: number;
     page_size?: number;
-  }) => get(`/attendance-sessions/${qs(params)}`),
+  }) =>
+    params?.page != null
+      ? get(`/attendance-sessions/${qs(params)}`)
+      : fetchAllPages('/attendance-sessions/', params),
 
   createAttendanceSession: (data: Record<string, unknown>) =>
     post('/attendance-sessions/create/', data),
@@ -319,7 +322,10 @@ export const api = {
     page_size?: number;
     date?: string;
     floor?: number;
-  }) => get(`/attendance-records/${qs(params)}`),
+  }) =>
+    params?.page != null
+      ? get(`/attendance-records/${qs(params)}`)
+      : fetchAllPages('/attendance-records/', params),
 
   updateAttendanceRecord: (id: number | string, data: Record<string, unknown>) =>
     patch(`/attendance-records/${id}/update/`, data),

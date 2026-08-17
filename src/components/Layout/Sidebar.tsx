@@ -8,6 +8,7 @@ import {
   FileText,
   Settings,
   UserCheck,
+  BarChart3,
 } from 'lucide-react';
 import { useAppStore } from '../../stores/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,6 +22,7 @@ const navigation = [
   { name: 'Xodimlar', href: '/staff', icon: Users },
   { name: 'Yotoqxona', href: '/rooms', icon: Building },
   { name: 'Davomat', href: '/attendance', icon: UserCheck },
+  { name: 'Hisobotlar', href: '/reports', icon: BarChart3 },
   { name: 'Arizalar', href: '/applications', icon: FileText },
   { name: 'Sozlamalar', href: '/settings', icon: Settings },
 ];
