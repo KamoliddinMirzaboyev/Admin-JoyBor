@@ -424,14 +424,18 @@ const StudentProfile: React.FC = () => {
       return;
     }
 
-    // Imtiyoz uchun boolean value
     if (field === 'privilege') {
       setForm(f => f ? { ...f, [field]: option.value } : f);
       return;
     }
 
-    // For ID fields, store just the ID number
-    setForm(f => f ? { ...f, [field]: option.value } : f);
+    setForm(f => {
+      if (!f) return f;
+      const next = { ...f, [field]: option.value };
+      if (field === 'province') next.district = null;
+      if (field === 'floor') next.room = null;
+      return next;
+    });
   };
 
   const handleSave = async () => {

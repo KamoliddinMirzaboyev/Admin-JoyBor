@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { post } from '../data/api';
+import { get, post } from '../data/api';
 
 interface LoginResult {
   access?: string;
@@ -33,17 +33,38 @@ const Login: React.FC = () => {
           sessionStorage.setItem('refresh', result.refresh);
         }
 
-        // Agar role kelsa, uni ham saqlash
-        if (result.role) {
-          sessionStorage.setItem('userRole', result.role);
+        let role = result.role || '';
+        try {
+          const me = (await get('/me/')) as { role?: string };
+          if (me?.role) role = me.role;
+        } catch {
+          // /me/ xato bersa token role'iga tayanamiz
         }
 
-        toast.success('Muvaffaqiyatli kirdingiz!');
+        const normalized = role.toLowerCase().replace(/[_\s-]/g, '');
+        const blocked =
+          (normalized.includes('student') ||
+            normalized.includes('talaba') ||
+            normalized.includes('sardor') ||
+            normalized.includes('floorleader')) &&
+          !normalized.includes('admin');
+        if (blocked) {
+          sessionStorage.removeItem('access');
+          sessionStorage.removeItem('refresh');
+          sessionStorage.removeItem('isAuth');
+          sessionStorage.removeItem('userRole');
+          const errorMsg = "Bu hisob admin emas. Admin login/paroli bilan kiring.";
+          setError(errorMsg);
+          toast.error(errorMsg);
+          setLoading(false);
+          return;
+        }
 
-        // Biroz kutib, keyin redirect qilish
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 500);
+        if (role) sessionStorage.setItem('userRole', role);
+
+        toast.success('Muvaffaqiyatli kirdingiz!');
+        setLoading(false);
+        window.location.href = '/';
       } else {
         const errorMsg = 'Login yoki parol noto\'g\'ri!';
         setError(errorMsg);

@@ -147,8 +147,14 @@ const FloorDetail: React.FC = () => {
       const leadersArray = leaders.results || leaders;
       const leader = leadersArray.find((l: { floor: number }) => String(l.floor) === String(floorId));
       setFloorLeader(leader || null);
-    } catch {
-      // Sardor topilmadi — jim o'tkazamiz
+    } catch (err) {
+      const status = (err as ApiError)?.response?.status;
+      if (status === 404) {
+        setFloorLeader(null);
+        return;
+      }
+      setFloorLeader(null);
+      toast.error("Qavat sardorini yuklab bo'lmadi");
     }
   };
 

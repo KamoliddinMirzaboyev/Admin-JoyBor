@@ -150,13 +150,14 @@ const Payments: React.FC = () => {
       return;
     }
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       student: Number(form.studentId),
       amount: Number(form.amount),
       method: form.paymentType === "cash" ? "Cash" : "Card",
       comment: form.comment || "",
-      status: "APPROVED"
+      status: "APPROVED",
     };
+    if (form.validUntil) payload.valid_until = form.validUntil;
 
     if (isEditMode && selectedPayment) {
       updatePaymentMutation.mutate({ id: selectedPayment.id, data: payload }, {

@@ -24,23 +24,32 @@ function clearAuthAndRedirect() {
   }
 }
 
+let refreshInFlight: Promise<boolean> | null = null;
+
 async function tryRefreshToken(): Promise<boolean> {
-  const refresh = sessionStorage.getItem('refresh');
-  if (!refresh) return false;
-  try {
-    const res = await fetch(`${BASE_URL}/token/refresh/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh }),
-    });
-    if (!res.ok) return false;
-    const data = (await res.json()) as { access?: string };
-    if (!data.access) return false;
-    sessionStorage.setItem('access', data.access);
-    return true;
-  } catch {
-    return false;
-  }
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    const refresh = sessionStorage.getItem('refresh');
+    if (!refresh) return false;
+    try {
+      const res = await fetch(`${BASE_URL}/token/refresh/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh }),
+      });
+      if (!res.ok) return false;
+      const data = (await res.json()) as { access?: string; refresh?: string };
+      if (!data.access) return false;
+      sessionStorage.setItem('access', data.access);
+      if (data.refresh) sessionStorage.setItem('refresh', data.refresh);
+      return true;
+    } catch {
+      return false;
+    }
+  })().finally(() => {
+    refreshInFlight = null;
+  });
+  return refreshInFlight;
 }
 
 export async function apiFetch(url: string, options: RequestInit = {}, retried = false): Promise<unknown> {
@@ -54,12 +63,12 @@ export async function apiFetch(url: string, options: RequestInit = {}, retried =
       const refreshed = await tryRefreshToken();
       if (refreshed) return apiFetch(url, options, true);
       clearAuthAndRedirect();
-      return {};
+      throw new Error('Sessiya tugadi. Qayta kiring.');
     }
 
     if (res.status === 401) {
       clearAuthAndRedirect();
-      return {};
+      throw new Error('Sessiya tugadi. Qayta kiring.');
     }
 
     const data = await res.json().catch(() => ({}));
@@ -115,6 +124,30 @@ function apiFetchRaw(url: string, options: RequestInit = {}, retried = false): P
   });
 }
 
+async function fetchAllPages(
+  path: string,
+  params?: Record<string, string | number | boolean | undefined | null>,
+  pageSize = 100
+): Promise<{ results: unknown[]; count: number }> {
+  const results: unknown[] = [];
+  let page = 1;
+  let count = 0;
+  const maxPages = 40;
+  while (page <= maxPages) {
+    const data = await get(`${path}${qs({ ...params, page, page_size: pageSize })}`);
+    if (Array.isArray(data)) {
+      return { results: data, count: data.length };
+    }
+    const payload = data as { results?: unknown[]; next?: string | null; count?: number };
+    const batch = Array.isArray(payload.results) ? payload.results : [];
+    count = typeof payload.count === 'number' ? payload.count : results.length + batch.length;
+    results.push(...batch);
+    if (!payload.next || batch.length === 0) break;
+    page += 1;
+  }
+  return { results, count };
+}
+
 function qs(params?: Record<string, string | number | boolean | undefined | null>): string {
   if (!params) return '';
   const sp = new URLSearchParams();
@@ -162,7 +195,10 @@ export const api = {
     placement_status?: string;
     is_active?: boolean;
     ordering?: string;
-  }) => get(`/students/${qs(params)}`),
+  }) =>
+    params?.page != null
+      ? get(`/students/${qs(params)}`)
+      : fetchAllPages('/students/', params),
 
   getAdminStudents: (params?: Record<string, string | number | boolean | undefined>) =>
     get(`/admin/students/${qs(params)}`),
@@ -202,12 +238,16 @@ export const api = {
   // Payments
   getPayments: (params?: {
     page?: number;
+    page_size?: number;
     student?: number | string;
     status?: string;
     method?: string;
     dormitory?: number | string;
     ordering?: string;
-  }) => get(`/payments/${qs(params)}`),
+  }) =>
+    params?.page != null
+      ? get(`/payments/${qs(params)}`)
+      : fetchAllPages('/payments/', params),
   createPayment: (data: Record<string, unknown>) => post('/payments/create/', data),
   updatePayment: (id: number | string, data: Record<string, unknown>) =>
     patch(`/payments/${id}/`, data),
@@ -216,10 +256,14 @@ export const api = {
   // Applications
   getApplications: (params?: {
     page?: number;
+    page_size?: number;
     search?: string;
     dormitory?: number | string;
     status?: string;
-  }) => get(`/applications/${qs(params)}`),
+  }) =>
+    params?.page != null
+      ? get(`/applications/${qs(params)}`)
+      : fetchAllPages('/applications/', params),
   getApplication: (id: number | string) => get(`/applications/${id}/`),
   updateApplication: (id: number | string, data: Record<string, unknown>) =>
     patch(`/applications/${id}/`, data),
@@ -286,7 +330,11 @@ export const api = {
     is_active?: boolean;
     search?: string;
     page?: number;
-  }) => get(`/staff/${qs(params)}`),
+    page_size?: number;
+  }) =>
+    params?.page != null
+      ? get(`/staff/${qs(params)}`)
+      : fetchAllPages('/staff/', params),
   createStaff: (data: FormData) => post('/staff/', data),
   updateStaff: (id: number | string, data: FormData | Record<string, unknown>) =>
     patch(`/staff/${id}/`, data),
@@ -303,14 +351,26 @@ export const api = {
   patchMyDormitory: (data: Record<string, unknown> | FormData) =>
     patch('/admin/my-dormitory/', data),
   updateMyDormitory: (data: Record<string, unknown>) => {
+    const hasFile = Object.values(data).some(
+      (v) => v instanceof Blob || (Array.isArray(v) && v.some((item) => item instanceof Blob))
+    );
+    if (!hasFile) return patch('/admin/my-dormitory/', data);
+
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        if (Array.isArray(value)) {
-          value.forEach((item) => formData.append(key, String(item)));
-        } else {
-          formData.append(key, String(value));
-        }
+      if (value === null || value === undefined) return;
+      if (value instanceof Blob) {
+        formData.append(key, value);
+      } else if (Array.isArray(value)) {
+        value.forEach((item) => {
+          if (item instanceof Blob) formData.append(key, item);
+          else if (typeof item === 'object' && item !== null) formData.append(key, JSON.stringify(item));
+          else formData.append(key, String(item));
+        });
+      } else if (typeof value === 'object') {
+        formData.append(key, JSON.stringify(value));
+      } else {
+        formData.append(key, String(value));
       }
     });
     return patch('/admin/my-dormitory/', formData);
@@ -360,16 +420,18 @@ export const api = {
         is_read: Boolean(n.is_read ?? n.read ?? n.isRead),
         message: String(n.message ?? n.title ?? n.content ?? ''),
         type: String(n.type ?? n.notification_type ?? 'info'),
-        created_at: String(n.created_at ?? n.createdAt ?? new Date().toISOString()),
+        created_at: n.created_at != null || n.createdAt != null
+          ? String(n.created_at ?? n.createdAt)
+          : '',
         id: Number(n.id),
       }));
     } catch {
-      return [];
+      throw new Error("Bildirishnomalarni yuklab bo'lmadi");
     }
   },
   getUnreadCount: () => get('/notifications/unread-count/'),
   markNotificationAsRead: (id: number) =>
-    post('/notifications/mark-read/', { id, notification_id: id }),
+    post('/notifications/mark-read/', { notification_id: id }),
   markAllNotificationsAsRead: () => post('/notifications/mark-all-read/', {}),
   markApplicationNotificationAsRead: (id: number) =>
     post('/notifications/mark-read/', { id, notification_id: id }),

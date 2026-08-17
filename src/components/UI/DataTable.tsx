@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Search, Filter, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -39,6 +39,10 @@ const DataTable: React.FC<DataTableProps> = ({
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   // Filter data based on search term
   const filteredData = data.filter((row) => {
     if (!searchTerm) return true;
@@ -66,9 +70,10 @@ const DataTable: React.FC<DataTableProps> = ({
   });
 
   // Paginate data
-  const totalPages = Math.ceil(sortedData.length / pageSize);
+  const totalPages = Math.ceil(sortedData.length / pageSize) || 1;
+  const safePage = Math.min(currentPage, totalPages);
   const paginatedData = pagination
-    ? sortedData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+    ? sortedData.slice((safePage - 1) * pageSize, safePage * pageSize)
     : sortedData;
 
   const handleSort = (key: string) => {
@@ -174,7 +179,7 @@ const DataTable: React.FC<DataTableProps> = ({
         <div className="px-6 py-3 border-t border-surface-200 dark:border-surface-700 flex items-center justify-between">
           <div className="flex items-center text-sm text-surface-700 dark:text-surface-300">
             <span>
-              {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, sortedData.length)} of{' '}
+              {(safePage - 1) * pageSize + 1}-{Math.min(safePage * pageSize, sortedData.length)} of{' '}
               {sortedData.length} natija
             </span>
           </div>

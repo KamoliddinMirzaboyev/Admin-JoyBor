@@ -4,6 +4,7 @@ export const formatCurrency = (amount: number | string | undefined | null): stri
   
   const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
   if (isNaN(numAmount) || numAmount === 0) return '0 so\'m';
+  if (numAmount < 0) return `-${formatCurrency(Math.abs(numAmount))}`;
 
   // Trillionlar uchun (1,000,000,000,000+)
   if (numAmount >= 1000000000000) {
@@ -29,7 +30,7 @@ export const formatCurrency = (amount: number | string | undefined | null): stri
   if (numAmount >= 1000000) {
     const millions = numAmount / 1000000;
     if (millions >= 10) {
-      return `${Math.round(millions)} MLN so'm`;
+      return `${millions.toFixed(1)} MLN so'm`;
     } else {
       return `${millions.toFixed(1)} MLN so'm`;
     }

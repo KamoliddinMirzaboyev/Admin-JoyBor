@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Layout from "./components/Layout/Layout";
 import { Toaster } from "sonner";
 import SEOHead from "./components/SEO/SEOHead";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // Lazy loading komponentlar (bir marta, modul yuklanganda yaratiladi)
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
@@ -58,12 +59,14 @@ const queryClient = new QueryClient({
 });
 
 function RequireAuth() {
-  const isAuth = sessionStorage.getItem('isAuth') === 'true';
+  const token = sessionStorage.getItem('access');
+  const isAuth = sessionStorage.getItem('isAuth') === 'true' && Boolean(token);
   return isAuth ? <Outlet /> : <Navigate to="/login" replace />;
 }
 
 function App() {
   return (
+    <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <SEOHead />
       <Toaster position="top-center" />
@@ -90,6 +93,7 @@ function App() {
         </Route>
       </Routes>
     </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

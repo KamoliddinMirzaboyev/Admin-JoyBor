@@ -265,6 +265,7 @@ const Applications: React.FC = () => {
         id: app.id,
         name: app.name,
         last_name: app.last_name,
+        gender: app.gender,
         middle_name: app.middle_name,
         phone: app.phone,
         created_at: app.created_at,

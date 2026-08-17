@@ -45,7 +45,10 @@ const PaymentsTable: React.FC<PaymentsTableProps> = ({ payments, hasActiveFilter
     {
       key: "amount",
       title: "Miqdor",
-      render: (amount: unknown): React.ReactNode => (typeof amount === "number" ? formatCurrency(amount) : "-"),
+      render: (amount: unknown): React.ReactNode => {
+        const n = typeof amount === "number" ? amount : Number(amount);
+        return Number.isFinite(n) ? formatCurrency(n) : "-";
+      },
       sortable: true,
     },
     {
