@@ -42,6 +42,7 @@ export default function ImagesTab({ settings, onSettingsUpdate, editSection, set
     try {
       const formData = new FormData();
       formData.append('image', file);
+      formData.append('dormitory', String(settings.id));
 
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {

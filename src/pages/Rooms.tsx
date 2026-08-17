@@ -139,6 +139,13 @@ const Rooms: React.FC = () => {
 
   const typedFloors: Floor[] = Array.isArray(floors) ? (floors as Floor[]) : [];
 
+  // Qavat yaratishda backend `dormitory` maydonini talab qiladi (POST /floors/)
+  const { data: myDormitory } = useQuery<{ id: number } | null>({
+    queryKey: ['my-dormitory'],
+    queryFn: async () => (await get('/admin/my-dormitory/')) as { id: number },
+    staleTime: 1000 * 60 * 10,
+  });
+
   useEffect(() => {
     if (location.state && (location.state as { openAddRoomModal?: boolean })?.openAddRoomModal) {
       setShowRoomModal(true);
@@ -182,6 +189,11 @@ const Rooms: React.FC = () => {
 
     floorStr = `${floorNumber}-qavat`;
 
+    if (!myDormitory?.id) {
+      toast.error('Yotoqxona ma\'lumoti hali yuklanmoqda, birozdan keyin urinib ko\'ring.');
+      return;
+    }
+
     setAddingFloor(true);
     try {
       // Check if floor already exists
@@ -194,7 +206,8 @@ const Rooms: React.FC = () => {
 
       await post('/floors/', {
         name: floorStr,
-        gender: newFloorGender
+        gender: newFloorGender,
+        dormitory: myDormitory.id,
       });
 
       toast.success('Qavat muvaffaqiyatli qo\'shildi!');
