@@ -105,49 +105,54 @@ const getStatusBadgeClasses = (status: string): string => {
 const selectStyles: StylesConfig<SelectOption, false> = {
   control: (base, state) => ({
     ...base,
-    backgroundColor: 'transparent',
-    borderColor: state.isFocused ? '#14b8a6' : 'transparent',
-    boxShadow: 'none',
+    backgroundColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#f8fafc',
+    borderColor: state.isFocused ? '#2563eb' : (document.documentElement.classList.contains('dark') ? '#334155' : '#e2e8f0'),
+    boxShadow: state.isFocused ? '0 0 0 1px #2563eb' : 'none',
     '&:hover': {
-      borderColor: '#14b8a6',
+      borderColor: state.isFocused ? '#2563eb' : (document.documentElement.classList.contains('dark') ? '#475569' : '#cbd5e1'),
     },
-    borderRadius: '0.75rem',
-    padding: '2px 4px',
+    borderRadius: '0.5rem',
+    padding: '1px 2px',
     cursor: 'pointer',
+    minHeight: '40px',
+    fontSize: '0.875rem',
   }),
   menu: (base) => ({
     ...base,
-    backgroundColor: document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff',
-    borderRadius: '1rem',
+    backgroundColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
+    borderRadius: '0.75rem',
     overflow: 'hidden',
-    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-    border: '1px solid ' + (document.documentElement.classList.contains('dark') ? '#1e293b' : '#e2e8f0'),
+    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+    border: '1px solid ' + (document.documentElement.classList.contains('dark') ? '#334155' : '#e2e8f0'),
     zIndex: 9999,
   }),
   option: (base, state) => ({
     ...base,
     backgroundColor: state.isSelected
-      ? '#14b8a6'
+      ? '#2563eb'
       : state.isFocused
-        ? (document.documentElement.classList.contains('dark') ? '#1e293b' : '#f1f5f9')
+        ? (document.documentElement.classList.contains('dark') ? '#334155' : '#eff6ff')
         : 'transparent',
     color: state.isSelected
       ? '#ffffff'
       : (document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#1e293b'),
-    padding: '10px 16px',
+    padding: '8px 14px',
+    fontSize: '0.875rem',
     cursor: 'pointer',
     '&:active': {
-      backgroundColor: '#14b8a6',
+      backgroundColor: '#2563eb',
     },
   }),
   singleValue: (base) => ({
     ...base,
     color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#1e293b',
     fontWeight: '500',
+    fontSize: '0.875rem',
   }),
   placeholder: (base) => ({
     ...base,
     color: '#94a3b8',
+    fontSize: '0.875rem',
   }),
 };
 
@@ -159,19 +164,11 @@ const statusFilterOptions = [
   { value: '', label: 'Barcha arizalar' },
 ];
 
-// Status labels for display
 const statusLabels: Record<string, string> = {
   'PENDING': 'Yangi',
   'APPROVED': 'Qabul qilindi',
   'REJECTED': 'Rad etilgan',
   'CONVERTED': 'Talabaga aylantirilgan',
-  'Yangi': 'Yangi',
-  'Qabul qilindi': 'Qabul qilindi',
-  'Rad etilgan': 'Rad etilgan',
-  'Pending': 'Yangi',
-  'Approved': 'Qabul qilindi',
-  'Rejected': 'Rad etilgan',
-  'Converted': 'Talabaga aylantirilgan',
 };
 
 const facultyOptions = [
@@ -208,7 +205,7 @@ const courseOptions = [
 
 const Applications: React.FC = () => {
   const [search, setSearch] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('PENDING'); // Default to PENDING
+  const [statusFilter, setStatusFilter] = useState<string>('PENDING');
   const [genderFilter, setGenderFilter] = useState<string>('');
   const [facultyFilter, setFacultyFilter] = useState<string>('');
   const [courseFilter, setCourseFilter] = useState<string>('');
@@ -225,7 +222,6 @@ const Applications: React.FC = () => {
 
   const queryClient = useQueryClient();
 
-  // Fetch floors for convert modal
   const { data: floorsData } = useQuery({
     queryKey: ['floors'],
     queryFn: () => api.getFloors(),
@@ -233,7 +229,6 @@ const Applications: React.FC = () => {
 
   const floors: Floor[] = (floorsData?.results || floorsData || []) as Floor[];
 
-  // Fetch rooms based on selected floor
   const { data: roomsData } = useQuery({
     queryKey: ['rooms', convertForm.floor],
     queryFn: () => api.getRooms(convertForm.floor),
@@ -242,25 +237,11 @@ const Applications: React.FC = () => {
 
   const rooms: RoomOption[] = (roomsData?.results || roomsData || []) as RoomOption[];
 
-  React.useEffect(() => {
-    const handleApplicationUpdate = () => {
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-    };
-
-    window.addEventListener('application-updated', handleApplicationUpdate);
-
-    return () => {
-      window.removeEventListener('application-updated', handleApplicationUpdate);
-    };
-  }, [queryClient]);
-
-  // API dan arizalarni olish
   const { data: applicationsData, isLoading, error, refetch } = useQuery({
     queryKey: ['applications'],
     queryFn: async () => {
       const data = (await api.getApplications()) as ApplicationsResponse | Record<string, unknown>[];
       const results = Array.isArray(data) ? data : (data?.results ?? []);
-
       return results.map((app) => ({
         id: app.id,
         name: app.name,
@@ -291,41 +272,10 @@ const Applications: React.FC = () => {
       } as Application));
     },
     staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
   });
 
   const applications: Application[] = applicationsData || [];
 
-  // Listen for global application updates
-  React.useEffect(() => {
-    const handleApplicationUpdate = () => {
-      refetch();
-    };
-    window.addEventListener('application-updated', handleApplicationUpdate);
-    return () => {
-      window.removeEventListener('application-updated', handleApplicationUpdate);
-    };
-  }, [refetch]);
-
-  // Open convert modal with application data
-  const openConvertModal = (app: Application) => {
-    setSelectedAppForConvert(app);
-    setConvertForm({ floor: '', room: '' });
-    setShowConvertModal(true);
-  };
-
-  // Handle floor selection
-  const handleFloorChange = (floorId: string) => {
-    setConvertForm(prev => ({ ...prev, floor: floorId, room: '' }));
-  };
-
-  // Handle room selection
-  const handleRoomChange = (roomId: string) => {
-    setConvertForm(prev => ({ ...prev, room: roomId }));
-  };
-
-  // Convert application to student with floor and room
   const handleConvertToStudent = async () => {
     if (!selectedAppForConvert || !convertForm.floor || !convertForm.room) {
       toast.error('Qavat va xona tanlash shart!');
@@ -343,93 +293,95 @@ const Applications: React.FC = () => {
       const result = await api.createStudent(formData);
       toast.success('Ariza muvaffaqiyatli talabaga aylantirildi!');
 
-      // Close modal and refresh
       setShowConvertModal(false);
       setSelectedAppForConvert(null);
       setConvertForm({ floor: '', room: '' });
 
-      // Refresh applications and students list
-      await queryClient.invalidateQueries({ queryKey: ['applications'] });
-      await queryClient.invalidateQueries({ queryKey: ['students'] });
-      await refetch();
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
 
-      // Emit global event for student update
       window.dispatchEvent(new CustomEvent('student-updated', { detail: { action: 'created', data: result } }));
-
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Arizani talabaga aylantirishda xatolik yuz berdi';
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: Record<string, unknown> }; message?: string };
+      const errorMessage =
+        (errorObj?.response?.data && Object.values(errorObj.response.data).flat().join(', ')) ||
+        errorObj?.message ||
+        'Talabaga aylantirishda xatolik yuz berdi!';
       toast.error(errorMessage);
     } finally {
       setConvertingApp(null);
     }
   };
 
-  // Delete application function
   const handleDeleteApplication = async (id: string | number) => {
     setDeletingApp(id);
     try {
       await api.deleteApplication(id);
-      toast.success('Ariza muvaffaqiyatli o\'chirildi');
-      await queryClient.invalidateQueries({ queryKey: ['applications'] });
-      await refetch();
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Arizani o\'chirishda xatolik yuz berdi';
+      toast.success('Ariza muvaffaqiyatli o\'chirildi!');
+      setShowDeleteConfirm({ show: false, id: null });
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: Record<string, unknown> }; message?: string };
+      const errorMessage =
+        (errorObj?.response?.data && Object.values(errorObj.response.data).flat().join(', ')) ||
+        errorObj?.message ||
+        'Arizani o\'chirishda xatolik yuz berdi!';
       toast.error(errorMessage);
     } finally {
       setDeletingApp(null);
-      setShowDeleteConfirm({ show: false, id: null });
     }
   };
 
-  // Filter API data with proper type safety and sort by newest first
-  const filteredApps = applications
-    .filter((app) => {
+  const filteredApps = applications.filter(app => {
+    if (search) {
       const searchLower = search.toLowerCase();
+      const name = (app.name || '').toLowerCase();
+      const lastName = (app.last_name || '').toLowerCase();
+      const phone = String(app.phone || '').toLowerCase();
+      const fullName = `${name} ${lastName}`.trim();
+      const reverseFullName = `${lastName} ${name}`.trim();
 
-      // Qidiruv - faqat ism va telefon bo'yicha
-      const nameMatch = !search || (
-        (app.name || '').toLowerCase().includes(searchLower) ||
-        (app.last_name || '').toLowerCase().includes(searchLower) ||
-        (app.middle_name || '').toLowerCase().includes(searchLower) ||
-        (app.phone || '').toString().includes(searchLower)
-      );
+      const matchesSearch =
+        name.includes(searchLower) ||
+        lastName.includes(searchLower) ||
+        fullName.includes(searchLower) ||
+        reverseFullName.includes(searchLower) ||
+        phone.includes(searchLower);
 
-      // Status filter
-      const statusMatch = !statusFilter || normalizeStatus(app.status) === normalizeStatus(statusFilter);
+      if (!matchesSearch) return false;
+    }
 
-      // Gender filter
-      const genderMatch = !genderFilter ||
-        app.gender?.toLowerCase() === genderFilter.toLowerCase();
+    if (statusFilter) {
+      const canonicalStatus = normalizeStatus(app.status);
+      if (canonicalStatus !== statusFilter) return false;
+    }
 
-      // Faculty filter
-      const facultyMatch = !facultyFilter ||
-        app.faculty?.toLowerCase() === facultyFilter.toLowerCase();
+    if (genderFilter && app.gender !== genderFilter) return false;
+    if (facultyFilter && app.faculty !== facultyFilter) return false;
+    if (courseFilter && app.course !== courseFilter) return false;
 
-      // Course filter
-      const courseMatch = !courseFilter ||
-        app.course === courseFilter;
+    if (regionFilter) {
+      const provName = app.province_name || app.province?.name || '';
+      if (!provName.toLowerCase().includes(regionFilter.toLowerCase())) return false;
+    }
 
-      // Region filter
-      const regionMatch = !regionFilter ||
-        app.province_name === regionFilter;
+    return true;
+  });
 
-      return nameMatch && statusMatch && genderMatch && facultyMatch && courseMatch && regionMatch;
-    })
-    .sort((a, b) => {
-      // Eng yangisi tepada bo'lishi uchun created_at bo'yicha saralash
-      const dateA = new Date(a.created_at || a.date || 0).getTime();
-      const dateB = new Date(b.created_at || b.date || 0).getTime();
-      return dateB - dateA; // Eng yangi birinchi
-    });
-
-  // Loading state
   if (isLoading) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full min-h-screen bg-surface-50 dark:bg-surface-950 transition-colors duration-300">
-        <Skeleton className="h-9 w-48 mb-6" />
-        <Skeleton className="h-24 w-full rounded-2xl mb-6" />
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <Skeleton className="h-40 w-full rounded-2xl" count={4} />
+      <div className="space-y-6 w-full">
+        <div className="flex justify-between items-center mb-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-28" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-44 w-full" />
+          ))}
         </div>
       </div>
     );
@@ -443,50 +395,46 @@ const Applications: React.FC = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full min-h-screen bg-surface-50 dark:bg-surface-950 transition-colors duration-300">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div className="space-y-6 w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">
+          <h1 className="text-xl sm:text-2xl font-bold text-surface-900 dark:text-white">
             Arizalar
           </h1>
-          <p className="text-surface-600 dark:text-surface-400 text-sm mt-1">
-            Tizimdagi barcha kelib tushgan arizalar
+          <p className="text-surface-500 dark:text-surface-400 text-xs sm:text-sm mt-0.5">
+            Tizimdagi barcha kelib tushgan talabalar arizalari
           </p>
         </div>
 
-        <div className="flex items-center gap-4 px-4 py-2 bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800">
+        <div className="flex items-center gap-4 px-4 py-2 bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 shadow-sm self-start sm:self-auto">
           <div className="text-right">
-            <span className="text-xs font-medium text-surface-500 dark:text-surface-400 uppercase">Jami</span>
-            <p className="text-lg font-bold text-surface-900 dark:text-white">{applications.length}</p>
+            <span className="text-[10px] font-bold text-surface-500 uppercase tracking-wider">Jami</span>
+            <p className="text-base sm:text-lg font-bold text-surface-900 dark:text-white leading-tight">{applications.length}</p>
           </div>
-          <div className="w-px h-8 bg-surface-200 dark:bg-surface-700"></div>
+          <div className="w-px h-6 bg-surface-200 dark:border-surface-700"></div>
           <div className="text-right">
-            <span className="text-xs font-medium text-surface-500 dark:text-surface-400 uppercase">Saralandi</span>
-            <p className="text-lg font-bold text-brand-600 dark:text-brand-400">{filteredApps.length}</p>
+            <span className="text-[10px] font-bold text-surface-500 uppercase tracking-wider">Saralandi</span>
+            <p className="text-base sm:text-lg font-bold text-brand-600 dark:text-brand-400 leading-tight">{filteredApps.length}</p>
           </div>
         </div>
       </div>
 
-      {/* Filter Section */}
-      <div className="bg-white dark:bg-surface-900 rounded-2xl shadow-sm border border-surface-200 dark:border-surface-800 p-4 mb-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4">
-            {/* Search Input */}
+      <div className="bg-white dark:bg-surface-900 rounded-xl shadow-sm border border-surface-200 dark:border-surface-800 p-4 sm:p-5">
+        <div className="flex flex-col gap-3.5">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
             <div className="flex-1 relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-surface-400" />
+                <Search className="h-4 w-4 text-surface-400" />
               </div>
               <input
                 type="text"
-                placeholder="Ism, familiya yoki telefon..."
+                placeholder="Ism, familiya yoki telefon orqali qidirish..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-900 dark:text-white placeholder-surface-400 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-transparent"
+                className="w-full pl-9 pr-4 py-2 bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg text-sm text-surface-900 dark:text-white placeholder-surface-400 outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 transition-colors"
               />
             </div>
 
-            {/* Status Select */}
             <div className="lg:w-64">
               <Select
                 options={statusFilterOptions}
@@ -494,15 +442,12 @@ const Applications: React.FC = () => {
                 onChange={(opt) => setStatusFilter(opt?.value || '')}
                 styles={selectStyles}
                 placeholder="Holatni tanlang"
-                className="react-select-container"
-                classNamePrefix="react-select"
               />
             </div>
 
-            {/* Refresh Button */}
             <button
               onClick={() => refetch()}
-              className="px-4 py-2.5 rounded-xl bg-brand-600 text-white hover:bg-brand-700 transition-colors duration-150 flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
+              className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0"
               title="Yangilash"
             >
               <Filter className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -510,8 +455,7 @@ const Applications: React.FC = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Gender Filter */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
             <Select
               options={genderOptions}
               value={genderOptions.find(opt => opt.value === genderFilter)}
@@ -519,8 +463,6 @@ const Applications: React.FC = () => {
               styles={selectStyles}
               placeholder="Jinsni tanlang"
             />
-
-            {/* Faculty Filter */}
             <Select
               options={facultyOptions}
               value={facultyOptions.find(opt => opt.value === facultyFilter)}
@@ -528,8 +470,6 @@ const Applications: React.FC = () => {
               styles={selectStyles}
               placeholder="Fakultetni tanlang"
             />
-
-            {/* Course Filter */}
             <Select
               options={courseOptions}
               value={courseOptions.find(opt => opt.value === courseFilter)}
@@ -537,8 +477,6 @@ const Applications: React.FC = () => {
               styles={selectStyles}
               placeholder="Kursni tanlang"
             />
-
-            {/* Region Filter */}
             <Select
               options={regionOptions}
               value={regionOptions.find(opt => opt.value === regionFilter)}
@@ -550,10 +488,9 @@ const Applications: React.FC = () => {
         </div>
       </div>
 
-      {/* Applications List */}
       <div className="grid grid-cols-1 gap-4 pb-10">
         {filteredApps.length === 0 ? (
-          <div className="bg-white dark:bg-surface-900 rounded-2xl border border-surface-200 dark:border-surface-800">
+          <div className="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 p-8 shadow-sm">
             <EmptyState
               icon={Search}
               title="Arizalar topilmadi"

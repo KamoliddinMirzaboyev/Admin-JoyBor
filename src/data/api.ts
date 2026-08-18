@@ -203,7 +203,7 @@ export const api = {
   getAdminStudents: (params?: Record<string, string | number | boolean | undefined>) =>
     get(`/admin/students/${qs(params)}`),
 
-  createStudent: (data: FormData | Record<string, unknown>) => post('/students/create/', data),
+  createStudent: (data: FormData | Record<string, unknown>) => post('/admin/students/', data),
   getStudent: (id: number | string) => get(`/students/${id}/`),
   updateStudent: (id: number | string, data: FormData | Record<string, unknown>) =>
     patch(`/students/${id}/`, data),

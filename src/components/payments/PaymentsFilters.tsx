@@ -61,10 +61,10 @@ const PaymentsFilters: React.FC<PaymentsFiltersProps> = ({
       backgroundColor: isDarkMode ? "#1e293b" : "#fff",
       color: isDarkMode ? "#fff" : "#0f172a",
       borderColor: state.isFocused
-        ? (isDarkMode ? "#2dd4bf" : "#14b8a6")
+        ? (isDarkMode ? "#3b82f6" : "#2563eb")
         : (isDarkMode ? "#334155" : "#cbd5e1"),
       boxShadow: state.isFocused
-        ? `0 0 0 2px ${isDarkMode ? "rgba(45, 212, 191, 0.3)" : "rgba(20, 184, 166, 0.3)"}`
+        ? `0 0 0 2px ${isDarkMode ? "rgba(59, 130, 246, 0.3)" : "rgba(37, 99, 235, 0.3)"}`
         : "none",
       minHeight: 42,
       fontSize: 14,
@@ -92,9 +92,9 @@ const PaymentsFilters: React.FC<PaymentsFiltersProps> = ({
     option: (base: Record<string, unknown>, state: { isSelected: boolean; isFocused: boolean }) => ({
       ...base,
       backgroundColor: state.isSelected
-        ? (isDarkMode ? "#0d9488" : "#14b8a6")
+        ? (isDarkMode ? "#1d4ed8" : "#2563eb")
         : state.isFocused
-          ? (isDarkMode ? "#334155" : "#f1f5f9")
+          ? (isDarkMode ? "#334155" : "#eff6ff")
           : "transparent",
       color: state.isSelected ? "#fff" : (isDarkMode ? "#e2e8f0" : "#0f172a"),
       cursor: "pointer",
@@ -107,7 +107,7 @@ const PaymentsFilters: React.FC<PaymentsFiltersProps> = ({
     dropdownIndicator: (base: Record<string, unknown>) => ({
       ...base,
       color: isDarkMode ? "#94a3b8" : "#64748b",
-      "&:hover": { color: isDarkMode ? "#2dd4bf" : "#14b8a6" },
+      "&:hover": { color: isDarkMode ? "#3b82f6" : "#2563eb" },
     }),
     clearIndicator: (base: Record<string, unknown>) => ({
       ...base,

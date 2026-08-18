@@ -88,8 +88,8 @@ const selectStyles = {
   control: (base: Record<string, unknown>, state: { isFocused: boolean }) => ({
     ...base,
     backgroundColor: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff',
-    borderColor: state.isFocused ? '#14b8a6' : (document.documentElement.classList.contains('dark') ? '#1e293b' : '#e2e8f0'),
-    boxShadow: state.isFocused ? '0 0 0 2px #14b8a6' : undefined,
+    borderColor: state.isFocused ? '#2563eb' : (document.documentElement.classList.contains('dark') ? '#1e293b' : '#e2e8f0'),
+    boxShadow: state.isFocused ? '0 0 0 2px rgba(37, 99, 235, 0.2)' : undefined,
     minHeight: 40,
     fontSize: 15,
   }),
@@ -114,9 +114,9 @@ const selectStyles = {
   option: (base: Record<string, unknown>, state: { isSelected: boolean; isFocused: boolean }) => ({
     ...base,
     backgroundColor: state.isSelected
-      ? '#14b8a6'
+      ? '#2563eb'
       : state.isFocused
-        ? (document.documentElement.classList.contains('dark') ? '#1e293b' : '#f1f5f9')
+        ? (document.documentElement.classList.contains('dark') ? '#1e293b' : '#eff6ff')
         : 'transparent',
     color: state.isSelected
       ? '#ffffff'

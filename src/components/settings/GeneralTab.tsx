@@ -1,9 +1,23 @@
 import React, { useState } from 'react';
-import { DollarSign, Info, MapPin, Phone, School, Send, User } from 'lucide-react';
+import {
+  DollarSign,
+  Info,
+  MapPin,
+  Phone,
+  School,
+  Send,
+  User,
+  Globe,
+  FileText,
+  Save,
+  Pencil,
+  X,
+  ExternalLink,
+  CreditCard,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '../../utils/formatters';
 import api, { get } from '../../data/api';
-import { SectionCard, EditableInput } from './shared';
 import type { DormitorySettings } from './types';
 
 interface GeneralTabProps {
@@ -13,10 +27,9 @@ interface GeneralTabProps {
   setEditSection: (section: string | null) => void;
 }
 
-// Demo admin profil ma'lumotlari
 const ADMIN_PROFILE = {
   id: 1,
-  username: 'superadmin',
+  username: 'dxshadmin',
   first_name: 'Admin',
   last_name: 'Adminov',
   email: 'admin@joybor.uz',
@@ -26,10 +39,9 @@ const ADMIN_PROFILE = {
   avatar: null,
 };
 
-// Telefon raqamini formatlash funksiyasi
 function formatPhoneNumber(value: string) {
   const numbers = value.replace(/\D/g, '');
-  if (numbers.length === 0) return '';
+  if (numbers.length === 0) return '+998 ';
 
   let formattedNumbers = numbers;
   if (!numbers.startsWith('998') && numbers.startsWith('9')) {
@@ -39,9 +51,9 @@ function formatPhoneNumber(value: string) {
   if (formattedNumbers.length >= 12) {
     return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3, 5)}) ${formattedNumbers.slice(5, 8)} ${formattedNumbers.slice(8, 10)} ${formattedNumbers.slice(10, 12)}`;
   } else if (formattedNumbers.length >= 10) {
-    return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3, 5)}) ${formattedNumbers.slice(5, 8)} ${formattedNumbers.slice(8, 10)} ${formattedNumbers.slice(10)}`;
+    return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3, 5)}) ${formattedNumbers.slice(5, 8)} ${formattedNumbers.slice(8, 10)}`;
   } else if (formattedNumbers.length >= 8) {
-    return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3, 5)}) ${formattedNumbers.slice(5, 8)} ${formattedNumbers.slice(8)}`;
+    return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3, 5)}) ${formattedNumbers.slice(5, 8)}`;
   } else if (formattedNumbers.length >= 5) {
     return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3, 5)}) ${formattedNumbers.slice(5)}`;
   } else if (formattedNumbers.length >= 3) {
@@ -55,441 +67,538 @@ function cleanPhoneNumber(value: string) {
 }
 
 async function refetchSettings(): Promise<DormitorySettings> {
-  const data = await get('/admin/my-dormitories/');
-  return data.results && data.results.length > 0 ? data.results[0] : data;
+  const data = (await get('/admin/my-dormitories/')) as { results?: DormitorySettings[] } & Partial<DormitorySettings>;
+  return data.results && data.results.length > 0 ? data.results[0] : (data as DormitorySettings);
 }
 
-export default function GeneralTab({ settings, onSettingsUpdate, editSection, setEditSection }: GeneralTabProps) {
-  const [dormLoading, setDormLoading] = useState(false);
-  const [editDormCard, setEditDormCard] = useState(false);
-  const [editPricesCard, setEditPricesCard] = useState(false);
-  const [editDescription, setEditDescription] = useState(false);
-  const [priceLoading, setPriceLoading] = useState(false);
-  const [descLoading, setDescLoading] = useState(false);
-  const [contactLoading, setContactLoading] = useState(false);
+export default function GeneralTab({ settings, onSettingsUpdate }: GeneralTabProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [dormCardForm, setDormCardForm] = useState({
+  // Form State
+  const [formData, setFormData] = useState({
     name: settings.name || '',
     address: settings.address || '',
     distance: settings.distance ? String(settings.distance) : '',
-    phone_numer: settings.phone_numer || '',
+    phone_numer: settings.phone_numer ? formatPhoneNumber(settings.phone_numer) : '+998 ',
     link: settings.link || '',
-    latitude: settings.latitude ? String(settings.latitude) : '',
-    longitude: settings.longitude ? String(settings.longitude) : '',
-  });
-  const [pricesCardForm, setPricesCardForm] = useState({
     month_price: settings.month_price ? String(settings.month_price) : '',
     year_price: settings.year_price ? String(settings.year_price) : '',
+    admin_phone: ADMIN_PROFILE.phone ? formatPhoneNumber(ADMIN_PROFILE.phone) : '+998 ',
+    admin_telegram: ADMIN_PROFILE.telegram || '',
+    description: settings.description || '',
   });
-  const [descriptionForm, setDescriptionForm] = useState(settings.description || '');
-  const [contactForm, setContactForm] = useState({
-    phone: ADMIN_PROFILE.phone ? formatPhoneNumber(ADMIN_PROFILE.phone) : '',
-    telegram: ADMIN_PROFILE.telegram || '',
-  });
-
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("Brauzeringiz geolokatsiyani qo'llab-quvvatlamaydi");
-      return;
-    }
-
-    toast.promise(
-      new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setDormCardForm(prev => ({
-              ...prev,
-              latitude: position.coords.latitude.toString(),
-              longitude: position.coords.longitude.toString()
-            }));
-            resolve(position);
-          },
-          (error) => reject(error)
-        );
-      }),
-      {
-        loading: 'Joylashuv aniqlanmoqda...',
-        success: 'Joylashuv muvaffaqiyatli aniqlandi!',
-        error: (err: GeolocationPositionError) => {
-          if (err.code === 1) return 'Joylashuvga ruxsat berilmadi';
-          if (err.code === 2) return 'Joylashuvni aniqlab bo\'lmadi';
-          if (err.code === 3) return 'Vaqt tugadi';
-          return 'Xatolik yuz berdi';
-        }
-      }
-    );
-  };
-
-  const handleDormCardChange = (field: string, value: string) => {
-    setDormCardForm(f => ({ ...f, [field]: value }));
-  };
-  const handlePricesCardChange = (field: string, value: string) => {
-    setPricesCardForm(f => ({ ...f, [field]: value }));
-  };
 
   const currentAmenityIds = () =>
     (settings.amenities as Array<{ id?: number } | number>)?.map((a) => (typeof a === 'object' ? a.id : a)) || [];
 
-  const handleSaveDormCard = async () => {
-    setDormLoading(true);
-    try {
-      await api.updateMyDormitory({
-        name: dormCardForm.name,
-        address: dormCardForm.address,
-        distance: dormCardForm.distance ? parseFloat(dormCardForm.distance) : 0,
-        phone_numer: dormCardForm.phone_numer,
-        link: dormCardForm.link,
-        latitude: dormCardForm.latitude ? parseFloat(dormCardForm.latitude) : 0,
-        longitude: dormCardForm.longitude ? parseFloat(dormCardForm.longitude) : 0,
-        description: settings.description || '',
-        month_price: settings.month_price || 0,
-        year_price: settings.year_price || 0,
-        amenities: currentAmenityIds(),
-      });
-      onSettingsUpdate(await refetchSettings());
-      toast.success('Yotoqxona maʼlumotlari yangilandi!');
-      setEditDormCard(false);
-    } catch (err) {
-      toast.error((err as Error)?.message || 'Xatolik yuz berdi!');
-    } finally {
-      setDormLoading(false);
-    }
+  const handleCancelEdit = () => {
+    setFormData({
+      name: settings.name || '',
+      address: settings.address || '',
+      distance: settings.distance ? String(settings.distance) : '',
+      phone_numer: settings.phone_numer ? formatPhoneNumber(settings.phone_numer) : '+998 ',
+      link: settings.link || '',
+      month_price: settings.month_price ? String(settings.month_price) : '',
+      year_price: settings.year_price ? String(settings.year_price) : '',
+      admin_phone: ADMIN_PROFILE.phone ? formatPhoneNumber(ADMIN_PROFILE.phone) : '+998 ',
+      admin_telegram: ADMIN_PROFILE.telegram || '',
+      description: settings.description || '',
+    });
+    setIsEditing(false);
+    toast.info("Tahrirlash bekor qilindi");
   };
 
-  const handleSavePricesCard = async () => {
-    setPriceLoading(true);
-    try {
-      await api.updateMyDormitory({
-        name: settings.name || '',
-        address: settings.address || '',
-        distance: settings.distance || 0,
-        description: settings.description || '',
-        month_price: pricesCardForm.month_price ? parseFloat(pricesCardForm.month_price) : 0,
-        year_price: pricesCardForm.year_price ? parseFloat(pricesCardForm.year_price) : 0,
-        amenities: currentAmenityIds(),
-      });
-      onSettingsUpdate(await refetchSettings());
-      toast.success('Narx ma\'lumotlari yangilandi!');
-      setEditPricesCard(false);
-    } catch (err) {
-      toast.error((err as Error)?.message || 'Xatolik yuz berdi!');
-    } finally {
-      setPriceLoading(false);
-    }
-  };
-
-  const handleSaveDescription = async () => {
-    setDescLoading(true);
-    try {
-      await api.updateMyDormitory({
-        name: settings.name || '',
-        address: settings.address || '',
-        distance: settings.distance || 0,
-        description: descriptionForm,
-        month_price: settings.month_price || 0,
-        year_price: settings.year_price || 0,
-        amenities: currentAmenityIds(),
-      });
-      onSettingsUpdate(await refetchSettings());
-      toast.success('Tavsif muvaffaqiyatli yangilandi!');
-      setEditDescription(false);
-    } catch (err) {
-      toast.error((err as Error)?.message || 'Xatolik yuz berdi!');
-    } finally {
-      setDescLoading(false);
-    }
-  };
-
-  const handlePhoneChange = (value: string) => {
-    setContactForm(f => ({ ...f, phone: value }));
-  };
-
-  const handleSaveContact = async () => {
-    const cleanedPhone = cleanPhoneNumber(contactForm.phone);
-
-    if (!cleanedPhone && !contactForm.telegram.trim()) {
-      toast.error('Kamida bitta aloqa ma\'lumotini kiriting!');
-      return;
-    }
-    if (cleanedPhone && cleanedPhone.length < 9) {
-      toast.error('Telefon raqami noto\'g\'ri formatda!');
+  const handleSaveAll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      toast.error('Yotoqxona nomini kiriting');
       return;
     }
 
-    setContactLoading(true);
+    setLoading(true);
     try {
-      const updateData: Record<string, string> = {};
-      if (cleanedPhone) updateData.phone = cleanedPhone;
-      if (contactForm.telegram.trim()) updateData.telegram = contactForm.telegram;
+      const monthPrice = parseFloat(formData.month_price) || 0;
+      const yearPrice = parseFloat(formData.year_price) || 0;
+      const distance = parseFloat(formData.distance) || 0;
+      const cleanPhone = cleanPhoneNumber(formData.phone_numer);
 
-      await api.updateAdminProfile(updateData);
+      // 1. Update Dormitory
+      await api.updateMyDormitory({
+        name: formData.name.trim(),
+        address: formData.address.trim(),
+        distance,
+        phone_numer: cleanPhone ? `+${cleanPhone}` : '',
+        link: formData.link.trim(),
+        latitude: settings.latitude || 0,
+        longitude: settings.longitude || 0,
+        description: formData.description.trim(),
+        month_price: monthPrice,
+        year_price: yearPrice,
+        amenities: currentAmenityIds(),
+      });
 
-      toast.success('Aloqa ma\'lumotlari saqlandi!');
-      setEditSection(null);
+      // 2. Update Admin Profile
+      const cleanAdminPhone = cleanPhoneNumber(formData.admin_phone);
+      const updateAdmin: Record<string, string> = {};
+      if (cleanAdminPhone) updateAdmin.phone = cleanAdminPhone;
+      if (formData.admin_telegram.trim()) updateAdmin.telegram = formData.admin_telegram.trim();
 
-      if (cleanedPhone) {
-        setContactForm(f => ({ ...f, phone: formatPhoneNumber(cleanedPhone) }));
+      if (Object.keys(updateAdmin).length > 0) {
+        await api.updateAdminProfile(updateAdmin);
       }
+
+      const updated = await refetchSettings();
+      onSettingsUpdate(updated);
+      setIsEditing(false);
+      toast.success("Barcha sozlamalar muvaffaqiyatli saqlandi");
     } catch (err) {
-      toast.error((err as Error)?.message || 'Xatolik yuz berdi!');
+      toast.error((err as Error)?.message || 'Saqlashda xatolik yuz berdi');
     } finally {
-      setContactLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <>
-      {/* Dormitory Info Card */}
-      <SectionCard
-        icon={<Info className="w-8 h-8 text-brand-600" />}
-        title={<span className="text-base sm:text-lg font-bold text-surface-900 dark:text-white">Yotoqxona haqida</span>}
-        onEdit={() => setEditDormCard(true)}
-      >
-        <div className="rounded-xl bg-surface-50 dark:bg-surface-800/50 p-4 flex flex-col gap-4 border border-surface-200 dark:border-surface-700">
-          {editDormCard ? (
-            <>
-              <EditableInput label="Nomi" value={dormCardForm.name} onChange={v => handleDormCardChange('name', v)} disabled={dormLoading} fullWidth />
-              <EditableInput label="Manzil" value={dormCardForm.address} onChange={v => handleDormCardChange('address', v)} disabled={dormLoading} fullWidth />
-              <EditableInput label="Universitetgacha masofa (km)" value={dormCardForm.distance} onChange={v => handleDormCardChange('distance', v)} disabled={dormLoading} fullWidth />
-              <EditableInput label="Telefon raqami" value={dormCardForm.phone_numer} onChange={v => handleDormCardChange('phone_numer', v)} disabled={dormLoading} fullWidth placeholder="+998901234567" />
-              <EditableInput label="Havola (Link)" value={dormCardForm.link} onChange={v => handleDormCardChange('link', v)} disabled={dormLoading} fullWidth placeholder="https://..." />
+    <form onSubmit={handleSaveAll} className="w-full space-y-6">
+      {/* TOP HEADER ACTION BAR */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 p-5 shadow-sm">
+        <div>
+          <h2 className="text-lg font-bold text-surface-900 dark:text-white flex items-center gap-2">
+            <span>Yotoqxona Ma'lumotlari va Tariflar</span>
+          </h2>
+          <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">
+            {isEditing
+              ? "Ma'lumotlarni o'zgartiring va saqlash tugmasini bosing"
+              : "Yotoqxona ma'lumotlarini o'zgartirish uchun tahrirlash tugmasidan foydalaning"}
+          </p>
+        </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <EditableInput label="Latitude" value={dormCardForm.latitude} onChange={v => handleDormCardChange('latitude', v)} disabled={dormLoading} fullWidth placeholder="41.2995" />
-                <EditableInput label="Longitude" value={dormCardForm.longitude} onChange={v => handleDormCardChange('longitude', v)} disabled={dormLoading} fullWidth placeholder="69.2401" />
-              </div>
-
+        <div>
+          {isEditing ? (
+            <div className="flex items-center gap-2">
               <button
-                onClick={handleGetLocation}
-                disabled={dormLoading}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 rounded-xl border border-brand-200 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors duration-150 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500/40"
+                type="button"
+                onClick={handleCancelEdit}
+                disabled={loading}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700 text-surface-700 dark:text-surface-300 text-xs sm:text-sm font-semibold transition-colors"
               >
-                <MapPin className="w-4 h-4" />
-                Hozirgi joylashuvni aniqlash
+                <X className="w-4 h-4" />
+                <span>Bekor qilish</span>
               </button>
-
-              <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                <button className="px-4 sm:px-6 py-2 rounded-xl bg-success-600 text-white font-semibold hover:bg-success-700 transition-colors duration-150 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-brand-500/40" onClick={handleSaveDormCard} disabled={dormLoading}>{dormLoading ? 'Saqlanmoqda...' : 'Saqlash'}</button>
-                <button className="px-4 sm:px-6 py-2 rounded-xl bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-300 font-semibold hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors duration-150 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-brand-500/40" onClick={() => setEditDormCard(false)} disabled={dormLoading}>Bekor qilish</button>
-              </div>
-            </>
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition-colors disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                <span>{loading ? 'Saqlanmoqda...' : 'Saqlash'}</span>
+              </button>
+            </div>
           ) : (
-            <>
-              <div className="flex items-center gap-3 p-3 bg-white dark:bg-surface-900 rounded-xl">
-                <Info className="w-5 h-5 text-brand-600" />
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition-colors"
+            >
+              <Pencil className="w-4 h-4" />
+              <span>Tahrirlash</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* MAIN 2-COLUMN + 1-COLUMN GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* ========================================================= */}
+        {/* CHAP QISM (2 TA USTUN: ASOSIY MA'LUMOTLAR VA TAVSIF) */}
+        {/* ========================================================= */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* 1. ASOSIY PARAMETRLAR */}
+          <div className="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 p-6 shadow-sm space-y-5">
+            <div className="flex items-center gap-3 border-b border-surface-100 dark:border-surface-800 pb-4">
+              <div className="p-2 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-800/40">
+                <Info className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-surface-900 dark:text-white">
+                  Yotoqxona Asosiy Ma'lumotlari
+                </h3>
+                <p className="text-xs text-surface-500 dark:text-surface-400">
+                  Nomi, joylashgan manzili va aloqa vositalari
+                </p>
+              </div>
+            </div>
+
+            {isEditing ? (
+              /* EDIT MODE: CLEAN FORM INPUTS */
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
+                    Yotoqxona Nomi *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
+                    placeholder="Masalan: FDTU DXSH 3"
+                    className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-surface-900 dark:text-white font-medium transition-colors"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
+                    Manzil *
+                  </label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                    <input
+                      type="text"
+                      required
+                      value={formData.address}
+                      onChange={(e) => setFormData((f) => ({ ...f, address: e.target.value }))}
+                      placeholder="Farg'ona shahar, Universitet ko'chasi 15"
+                      className="w-full pl-9 pr-3.5 py-2.5 text-sm bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-surface-900 dark:text-white font-medium transition-colors"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <div className="text-xs text-surface-500 dark:text-surface-400">Nomi</div>
-                  <span className="font-semibold text-surface-900 dark:text-white">{settings.name}</span>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
+                    Universitetgacha Masofa (km)
+                  </label>
+                  <div className="relative">
+                    <School className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      min={0}
+                      value={formData.distance}
+                      onChange={(e) => setFormData((f) => ({ ...f, distance: e.target.value }))}
+                      placeholder="0.5"
+                      className="w-full pl-9 pr-3.5 py-2.5 text-sm bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-surface-900 dark:text-white font-medium transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
+                    Yotoqxona Telefon Raqami
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                    <input
+                      type="text"
+                      value={formData.phone_numer}
+                      onChange={(e) =>
+                        setFormData((f) => ({ ...f, phone_numer: formatPhoneNumber(e.target.value) }))
+                      }
+                      className="w-full pl-9 pr-3.5 py-2.5 text-sm bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-surface-900 dark:text-white font-mono transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
+                    Rasmiy Vebsayt yoki Havola
+                  </label>
+                  <div className="relative">
+                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                    <input
+                      type="url"
+                      value={formData.link}
+                      onChange={(e) => setFormData((f) => ({ ...f, link: e.target.value }))}
+                      placeholder="https://fdtu.uz yoki https://t.me/yotoqxona"
+                      className="w-full pl-9 pr-3.5 py-2.5 text-sm bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-surface-900 dark:text-white font-medium transition-colors"
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 bg-white dark:bg-surface-900 rounded-xl">
-                <MapPin className="w-5 h-5 text-brand-600" />
-                <div>
-                  <div className="text-xs text-surface-500 dark:text-surface-400">Manzil</div>
-                  <span className="text-surface-900 dark:text-white">{settings.address}</span>
+            ) : (
+              /* VIEW MODE: ELEGANT KEY-VALUE DISPLAY */
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/40 border border-surface-100 dark:border-surface-800">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-1">
+                      Yotoqxona Nomi
+                    </p>
+                    <p className="text-base font-bold text-surface-900 dark:text-white">
+                      {settings.name || '—'}
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/40 border border-surface-100 dark:border-surface-800">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-1">
+                      Universitetgacha masofa
+                    </p>
+                    <p className="text-base font-semibold text-surface-900 dark:text-white">
+                      {settings.distance ? `${settings.distance} km` : 'Kiritilmagan'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-white dark:bg-surface-900 rounded-xl">
-                <School className="w-5 h-5 text-brand-600" />
-                <div>
-                  <div className="text-xs text-surface-500 dark:text-surface-400">Universitetgacha masofa</div>
-                  <span className="text-surface-900 dark:text-white">{settings.distance} km</span>
+
+                <div className="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/40 border border-surface-100 dark:border-surface-800">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-1">
+                    Joylashgan Manzil
+                  </p>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-surface-900 dark:text-white">
+                    <MapPin className="w-4 h-4 text-brand-600 shrink-0" />
+                    <span>{settings.address || 'Kiritilmagan'}</span>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-white dark:bg-surface-900 rounded-xl">
-                <Phone className="w-5 h-5 text-brand-600" />
-                <div>
-                  <div className="text-xs text-surface-500 dark:text-surface-400">Telefon raqami</div>
-                  <span className="text-surface-900 dark:text-white">{settings.phone_numer || 'Kiritilmagan'}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-white dark:bg-surface-900 rounded-xl">
-                <Info className="w-5 h-5 text-brand-600" />
-                <div>
-                  <div className="text-xs text-surface-500 dark:text-surface-400">Havola</div>
-                  <span className="text-surface-900 dark:text-white truncate max-w-[200px] block">
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/40 border border-surface-100 dark:border-surface-800">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-1">
+                      Yotoqxona telefoni
+                    </p>
+                    <div className="flex items-center gap-2 text-sm font-semibold text-surface-900 dark:text-white">
+                      <Phone className="w-4 h-4 text-brand-600 shrink-0" />
+                      <span>{settings.phone_numer ? formatPhoneNumber(settings.phone_numer) : 'Kiritilmagan'}</span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/40 border border-surface-100 dark:border-surface-800">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-1">
+                      Rasmiy Havola
+                    </p>
                     {settings.link ? (
-                      <a href={settings.link} target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:underline">
-                        {settings.link}
+                      <a
+                        href={settings.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 dark:text-brand-400 hover:underline truncate max-w-full"
+                      >
+                        <Globe className="w-4 h-4 shrink-0" />
+                        <span className="truncate">{settings.link}</span>
+                        <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                       </a>
                     ) : (
-                      'Kiritilmagan'
+                      <span className="text-sm text-surface-400 font-medium">Kiritilmagan</span>
                     )}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-white dark:bg-surface-900 rounded-xl">
-                <MapPin className="w-5 h-5 text-brand-600" />
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-xs text-surface-500 dark:text-surface-400">Latitude</div>
-                    <span className="text-surface-900 dark:text-white">{settings.latitude || 'Kiritilmagan'}</span>
-                  </div>
-                  <div>
-                    <div className="text-xs text-surface-500 dark:text-surface-400">Longitude</div>
-                    <span className="text-surface-900 dark:text-white">{settings.longitude || 'Kiritilmagan'}</span>
                   </div>
                 </div>
               </div>
-            </>
-          )}
-        </div>
-      </SectionCard>
+            )}
+          </div>
 
-      {/* Prices Card */}
-      <SectionCard
-        icon={<DollarSign className="w-8 h-8 text-success-600" />}
-        title={<span className="text-base sm:text-lg font-bold text-surface-900 dark:text-white">Narx ma'lumotlari</span>}
-        description={editPricesCard ? undefined : "Oylik va yillik narxlar"}
-        onEdit={() => setEditPricesCard(true)}
-      >
-        <div className="rounded-xl bg-surface-50 dark:bg-surface-800/50 p-4 flex flex-col gap-4 border border-surface-200 dark:border-surface-700">
-          {editPricesCard ? (
-            <>
-              <EditableInput label="Oylik narx (so'm)" value={pricesCardForm.month_price} onChange={v => handlePricesCardChange('month_price', v)} disabled={priceLoading} fullWidth placeholder="1200000" />
-              <EditableInput label="Yillik narx (so'm)" value={pricesCardForm.year_price} onChange={v => handlePricesCardChange('year_price', v)} disabled={priceLoading} fullWidth placeholder="12000000" />
-              <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                <button className="px-4 sm:px-6 py-2 rounded-xl bg-success-600 text-white font-semibold hover:bg-success-700 transition-colors duration-150 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-brand-500/40" onClick={handleSavePricesCard} disabled={priceLoading}>{priceLoading ? 'Saqlanmoqda...' : 'Saqlash'}</button>
-                <button className="px-4 sm:px-6 py-2 rounded-xl bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-300 font-semibold hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors duration-150 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-brand-500/40" onClick={() => setEditPricesCard(false)} disabled={priceLoading}>Bekor qilish</button>
+          {/* 2. YOTOQXONA TAVSIFI */}
+          <div className="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 p-6 shadow-sm space-y-4">
+            <div className="flex items-center gap-3 border-b border-surface-100 dark:border-surface-800 pb-4">
+              <div className="p-2 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-800/40">
+                <FileText className="w-5 h-5" />
               </div>
-            </>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700">
-                <div className="flex items-center gap-3">
-                  <DollarSign className="w-5 h-5 text-success-500" />
-                  <span className="font-medium text-surface-700 dark:text-surface-300">Oylik narx</span>
-                </div>
-                <span className="font-bold text-success-600 dark:text-success-400">{formatCurrency(settings.month_price)}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700">
-                <div className="flex items-center gap-3">
-                  <DollarSign className="w-5 h-5 text-success-500" />
-                  <span className="font-medium text-surface-700 dark:text-surface-300">Yillik narx</span>
-                </div>
-                <span className="font-bold text-success-600 dark:text-success-400">{formatCurrency(settings.year_price)}</span>
+              <div>
+                <h3 className="text-base font-bold text-surface-900 dark:text-white">
+                  Yotoqxona Haqida Batafsil Tavsif
+                </h3>
+                <p className="text-xs text-surface-500 dark:text-surface-400">
+                  Talabalar saytida ko'rinadigan to'liq ma'lumot va qulayliklar matni
+                </p>
               </div>
             </div>
-          )}
-        </div>
-      </SectionCard>
 
-      {/* Description Card */}
-      <SectionCard
-        icon={<Info className="w-8 h-8 text-info-600" />}
-        title={<span className="text-base sm:text-lg font-bold text-surface-900 dark:text-white">Tavsif</span>}
-        description={editDescription ? undefined : "Yotoqxona haqida batafsil ma'lumot"}
-        onEdit={() => setEditDescription(true)}
-      >
-        <div className="rounded-xl bg-surface-50 dark:bg-surface-800/50 p-4 flex flex-col gap-4 border border-surface-200 dark:border-surface-700">
-          {editDescription ? (
-            <>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs text-surface-500 dark:text-surface-400 font-medium mb-1">Tavsif</label>
-                <textarea
-                  className="bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-xl px-3 py-2 text-surface-900 dark:text-white text-sm sm:text-base font-medium transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-brand-500/40 min-h-[120px] max-h-[300px] resize-y"
-                  value={descriptionForm}
-                  onChange={e => setDescriptionForm(e.target.value)}
-                  disabled={descLoading}
-                  placeholder="Yotoqxona haqida batafsil ma'lumot kiriting..."
-                  maxLength={1000}
-                />
+            {isEditing ? (
+              <textarea
+                rows={5}
+                value={formData.description}
+                onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))}
+                placeholder="Yotoqxona sharoitlari, joylashuvi va talabalar uchun yaratilgan imkoniyatlar haqida batafsil ma'lumot yozing..."
+                className="w-full p-3.5 text-sm bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-surface-900 dark:text-white leading-relaxed transition-colors"
+              />
+            ) : (
+              <div className="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/40 border border-surface-100 dark:border-surface-800 text-sm text-surface-700 dark:text-surface-300 leading-relaxed whitespace-pre-wrap min-h-[90px]">
+                {settings.description || "Hozircha yotoqxona tavsifi kiritilmagan. Tahrirlash tugmasini bosib tavsif yozishingiz mumkin."}
               </div>
-              <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                <button className="px-4 sm:px-6 py-2 rounded-xl bg-success-600 text-white font-semibold hover:bg-success-700 transition-colors duration-150 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-brand-500/40" onClick={handleSaveDescription} disabled={descLoading}>{descLoading ? 'Saqlanmoqda...' : 'Saqlash'}</button>
-                <button className="px-4 sm:px-6 py-2 rounded-xl bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-300 font-semibold hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors duration-150 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-brand-500/40" onClick={() => { setEditDescription(false); setDescriptionForm(settings.description || ''); }} disabled={descLoading}>Bekor qilish</button>
+            )}
+          </div>
+        </div>
+
+        {/* ========================================================= */}
+        {/* O'NG QISM (1 TA USTUN: TARIFLAR VA ADMIN ALOQASI) */}
+        {/* ========================================================= */}
+        <div className="space-y-6">
+          {/* 1. IJARA NARXLARI (TARIFLAR) */}
+          <div className="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 p-6 shadow-sm space-y-5">
+            <div className="flex items-center gap-3 border-b border-surface-100 dark:border-surface-800 pb-4">
+              <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
+                <DollarSign className="w-5 h-5" />
               </div>
-            </>
-          ) : (
-            <div className="p-3 bg-white dark:bg-surface-900 rounded-xl max-h-[200px] overflow-y-auto">
-              <div className="text-surface-900 dark:text-white leading-relaxed whitespace-pre-wrap break-words">
-                {settings.description || 'Tavsif kiritilmagan'}
+              <div>
+                <h3 className="text-base font-bold text-surface-900 dark:text-white">
+                  Ijara Narxlari (Tariflar)
+                </h3>
+                <p className="text-xs text-surface-500 dark:text-surface-400">
+                  Talabalar uchun oylik va yillik to'lovlar
+                </p>
               </div>
             </div>
-          )}
-        </div>
-      </SectionCard>
 
-      {/* Contact Section - Admin Profile dan */}
-      <SectionCard
-        icon={<User className="w-6 h-6" />}
-        title="Aloqa ma'lumotlari"
-        description="Admin profil ma'lumotlaridan olingan aloqa ma'lumotlari"
-        onEdit={() => setEditSection(editSection === 'contact' ? null : 'contact')}
-      >
-        <div className="space-y-4">
-          {editSection === 'contact' ? (
-            <>
-              <EditableInput
-                label="Telefon raqami"
-                value={contactForm.phone}
-                onChange={handlePhoneChange}
-                disabled={false}
-                placeholder="+998 90 123 45 67"
-                fullWidth
-                maxLength={19}
-              />
-              <EditableInput
-                label="Telegram"
-                value={contactForm.telegram}
-                onChange={v => setContactForm(f => ({ ...f, telegram: v }))}
-                disabled={false}
-                placeholder="@username"
-                fullWidth
-              />
-              <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                <button
-                  className="px-4 sm:px-6 py-2 rounded-xl bg-success-600 text-white font-semibold hover:bg-success-700 transition-colors duration-150 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
-                  onClick={handleSaveContact}
-                  disabled={contactLoading}
-                >
-                  {contactLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Saqlanmoqda...
-                    </>
-                  ) : (
-                    'Saqlash'
-                  )}
-                </button>
-                <button
-                  className="px-4 sm:px-6 py-2 rounded-xl bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-300 font-semibold hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors duration-150 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-brand-500/40"
-                  onClick={() => {
-                    setEditSection(null);
-                    setContactForm({
-                      phone: ADMIN_PROFILE.phone ? formatPhoneNumber(ADMIN_PROFILE.phone) : '',
-                      telegram: ADMIN_PROFILE.telegram || ''
-                    });
-                  }}
-                >
-                  Bekor qilish
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center gap-3 p-3 bg-surface-50 dark:bg-surface-800/50 rounded-xl border border-surface-200 dark:border-surface-700">
-                <Phone className="w-5 h-5 text-brand-600" />
+            {isEditing ? (
+              /* EDIT MODE: NUMBER INPUTS */
+              <div className="space-y-4">
                 <div>
-                  <div className="text-xs text-surface-500 dark:text-surface-400">Telefon raqami</div>
-                  <div className="text-surface-900 dark:text-white font-semibold">
-                    {ADMIN_PROFILE.phone ? formatPhoneNumber(ADMIN_PROFILE.phone) : 'Kiritilmagan'}
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
+                    Oylik Ijara Narxi (so'm) *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      step={10000}
+                      required
+                      value={formData.month_price}
+                      onChange={(e) => setFormData((f) => ({ ...f, month_price: e.target.value }))}
+                      placeholder="400000"
+                      className="w-full px-3.5 py-2.5 pr-20 text-sm bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-surface-900 dark:text-white font-bold"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-surface-400">
+                      so'm / oy
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
+                    Yillik Ijara Narxi (so'm) *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      step={50000}
+                      required
+                      value={formData.year_price}
+                      onChange={(e) => setFormData((f) => ({ ...f, year_price: e.target.value }))}
+                      placeholder="4000000"
+                      className="w-full px-3.5 py-2.5 pr-20 text-sm bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-surface-900 dark:text-white font-bold"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-surface-400">
+                      so'm / yil
+                    </span>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 bg-surface-50 dark:bg-surface-800/50 rounded-xl border border-surface-200 dark:border-surface-700">
-                <Send className="w-5 h-5 text-brand-600" />
+            ) : (
+              /* VIEW MODE: BEAUTIFUL PRICING CARDS */
+              <div className="space-y-3.5">
+                <div className="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/40 border border-surface-100 dark:border-surface-800">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-surface-500">
+                      Oylik To'lov
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
+                      Oyiga
+                    </span>
+                  </div>
+                  <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1 tracking-tight">
+                    {formatCurrency(settings.month_price)}
+                  </p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">
+                    1 nafar talaba uchun oylik to'lov
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/40 border border-surface-100 dark:border-surface-800">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-surface-500">
+                      Yillik To'lov
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-400 border border-brand-200/60 dark:border-brand-800/40">
+                      Yiliga
+                    </span>
+                  </div>
+                  <p className="text-2xl font-black text-brand-600 dark:text-brand-400 mt-1 tracking-tight">
+                    {formatCurrency(settings.year_price)}
+                  </p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">
+                    To'liq 10 oylik o'quv yili uchun to'lov
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 2. MA'MURIYAT VA ALOQA */}
+          <div className="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 p-6 shadow-sm space-y-5">
+            <div className="flex items-center gap-3 border-b border-surface-100 dark:border-surface-800 pb-4">
+              <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/40">
+                <User className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-surface-900 dark:text-white">
+                  Ma'muriyat va Aloqa
+                </h3>
+                <p className="text-xs text-surface-500 dark:text-surface-400">
+                  Talabalar uchun admin aloqa vositalari
+                </p>
+              </div>
+            </div>
+
+            {isEditing ? (
+              /* EDIT MODE */
+              <div className="space-y-4">
                 <div>
-                  <div className="text-xs text-surface-500 dark:text-surface-400">Telegram</div>
-                  <div className="text-surface-900 dark:text-white font-semibold">
-                    {ADMIN_PROFILE.telegram || 'Kiritilmagan'}
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
+                    Admin Telefon Raqami
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                    <input
+                      type="text"
+                      value={formData.admin_phone}
+                      onChange={(e) =>
+                        setFormData((f) => ({ ...f, admin_phone: formatPhoneNumber(e.target.value) }))
+                      }
+                      className="w-full pl-9 pr-3.5 py-2.5 text-sm bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-surface-900 dark:text-white font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
+                    Admin Telegram (@username)
+                  </label>
+                  <div className="relative">
+                    <Send className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sky-500" />
+                    <input
+                      type="text"
+                      value={formData.admin_telegram}
+                      onChange={(e) => setFormData((f) => ({ ...f, admin_telegram: e.target.value }))}
+                      placeholder="@joyboradmin"
+                      className="w-full pl-9 pr-3.5 py-2.5 text-sm bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-surface-900 dark:text-white font-medium"
+                    />
                   </div>
                 </div>
               </div>
-            </>
-          )}
+            ) : (
+              /* VIEW MODE */
+              <div className="space-y-3.5">
+                <div className="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/40 border border-surface-100 dark:border-surface-800">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-1">
+                    Admin Telefon Raqami
+                  </p>
+                  <div className="flex items-center gap-2 text-sm font-bold text-surface-900 dark:text-white font-mono">
+                    <Phone className="w-4 h-4 text-brand-600 shrink-0" />
+                    <span>{ADMIN_PROFILE.phone ? formatPhoneNumber(ADMIN_PROFILE.phone) : 'Kiritilmagan'}</span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/40 border border-surface-100 dark:border-surface-800">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-1">
+                    Admin Telegram
+                  </p>
+                  <div className="flex items-center gap-2 text-sm font-bold text-surface-900 dark:text-white">
+                    <Send className="w-4 h-4 text-sky-500 shrink-0" />
+                    <span>{ADMIN_PROFILE.telegram || 'Kiritilmagan'}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </SectionCard>
-    </>
+      </div>
+    </form>
   );
 }

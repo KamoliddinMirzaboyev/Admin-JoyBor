@@ -72,9 +72,9 @@ const selectStyles = {
   option: (base: Record<string, unknown>, state: { isSelected: boolean; isFocused: boolean }) => ({
     ...base,
     backgroundColor: state.isSelected
-      ? (document.documentElement.classList.contains('dark') ? '#0d9488' : '#14b8a6')
+      ? '#2563eb'
       : state.isFocused
-      ? (document.documentElement.classList.contains('dark') ? '#334155' : '#f1f5f9')
+      ? (document.documentElement.classList.contains('dark') ? '#334155' : '#eff6ff')
       : 'transparent',
     color: state.isSelected || document.documentElement.classList.contains('dark') ? '#fff' : '#0f172a',
     cursor: 'pointer',

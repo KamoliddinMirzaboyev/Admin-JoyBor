@@ -1,17 +1,16 @@
+
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Users, 
-  UserCheck, 
-  UserX, 
+import {
+  Users,
+  UserCheck,
+  UserX,
   TrendingUp,
   Building,
   UserPlus,
   UserCog,
   ChevronDown,
   Clock,
-  ArrowRightLeft,
-  Calendar,
   X,
   User,
   Mail
@@ -20,8 +19,7 @@ import StatsCard from '../components/UI/StatsCard';
 import Skeleton from '../components/UI/Skeleton';
 import EmptyState from '../components/UI/EmptyState';
 import api from '../data/api';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 import AddLeaderModal from '../components/Modals/AddLeaderModal';
 import ModernDatePicker from '../components/UI/ModernDatePicker';
 
@@ -65,13 +63,11 @@ const Attendance: React.FC = () => {
   const [floorLeaders, setFloorLeaders] = useState<FloorLeader[]>([]);
   const [showFloorFilter, setShowFloorFilter] = useState(false);
   const [showLeadersModal, setShowLeadersModal] = useState(false);
-  
-  const queryClient = useQueryClient();
 
   // Fetch floors
   const { data: floorsData } = useQuery<Paginated<Floor> | Floor[]>({
     queryKey: ['floors'],
-    queryFn: () => api.getFloors(),
+    queryFn: () => api.getFloors() as Promise<Paginated<Floor> | Floor[]>,
   });
 
   const floors: Floor[] = (Array.isArray(floorsData) ? floorsData : floorsData?.results) || [];
@@ -85,7 +81,7 @@ const Attendance: React.FC = () => {
   // 1. Barcha talabalarni olish (Qavatlar statistikasi uchun)
   const { data: studentsData } = useQuery<Paginated<StudentSummary> | StudentSummary[]>({
     queryKey: ['students-all'],
-    queryFn: () => api.getStudents(),
+    queryFn: () => api.getStudents() as Promise<Paginated<StudentSummary> | StudentSummary[]>,
   });
 
   const allStudents: StudentSummary[] = (Array.isArray(studentsData) ? studentsData : studentsData?.results) || [];
@@ -93,7 +89,7 @@ const Attendance: React.FC = () => {
   // 2. Kunlik barcha davomat qaydlarini olish
   const { data: attendanceRecordsData, isLoading: isAttendanceLoading } = useQuery<Paginated<AttendanceRecord> | AttendanceRecord[]>({
     queryKey: ['attendance-records-daily', selectedDate],
-    queryFn: () => api.getAttendanceRecords({ date: selectedDate })
+    queryFn: () => api.getAttendanceRecords({ date: selectedDate }) as Promise<Paginated<AttendanceRecord> | AttendanceRecord[]>
   });
 
   const allDailyRecords = React.useMemo(() => {
@@ -168,7 +164,7 @@ const Attendance: React.FC = () => {
   // Fetch floor leaders
   const { data: leadersData, refetch: refetchLeaders } = useQuery<Paginated<FloorLeader> | FloorLeader[]>({
     queryKey: ['floor-leaders'],
-    queryFn: () => api.getFloorLeaders()
+    queryFn: () => api.getFloorLeaders() as Promise<Paginated<FloorLeader> | FloorLeader[]>
   });
 
   useEffect(() => {
@@ -340,7 +336,7 @@ const Attendance: React.FC = () => {
       </div>
 
       {/* Davomat qaydlari jadvali */}
-      <div id="attendance-records-section" className="bg-white dark:bg-surface-800 rounded-2xl shadow-sm border border-surface-200 dark:border-surface-700 overflow-hidden">
+      <div id="attendance-records-section" className="bg-white dark:bg-surface-800 rounded-2xl shadow-sm border border-surface-200 dark:border-surface-700 relative">
         <div className="p-6 border-b border-surface-100 dark:border-surface-700 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="p-2.5 bg-brand-600 rounded-xl shadow-sm">
