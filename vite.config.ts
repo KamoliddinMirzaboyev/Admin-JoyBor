@@ -13,8 +13,6 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
-          ui: ['@mui/material', '@emotion/react', '@emotion/styled'],
-          utils: ['axios', 'date-fns', 'clsx']
         }
       }
     },

@@ -8,7 +8,7 @@ interface StatsCardProps {
   change?: string;
   changeType?: 'increase' | 'decrease' | 'neutral';
   icon: LucideIcon;
-  color?: 'primary' | 'secondary' | 'accent' | 'warning' | 'danger';
+  color?: 'primary' | 'secondary' | 'accent' | 'info' | 'success' | 'warning' | 'danger';
   trend?: number[];
   subStats?: { label: string; value: string | number }[];
 }
@@ -23,51 +23,51 @@ const StatsCard: React.FC<StatsCardProps> = ({
   subStats,
 }) => {
   const colorClasses = {
-    primary: 'from-primary-500 to-primary-600',
-    secondary: 'from-secondary-500 to-secondary-600',
-    accent: 'from-accent-500 to-accent-600',
-    warning: 'from-yellow-500 to-orange-500',
-    danger: 'from-red-500 to-red-600',
+    primary: 'bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-400',
+    secondary: 'bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-400',
+    accent: 'bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-400',
+    info: 'bg-info-50 text-info-600 dark:bg-info-900/20 dark:text-info-400',
+    success: 'bg-success-50 text-success-600 dark:bg-success-900/20 dark:text-success-400',
+    warning: 'bg-warning-50 text-warning-600 dark:bg-warning-900/20 dark:text-warning-400',
+    danger: 'bg-danger-50 text-danger-600 dark:bg-danger-900/20 dark:text-danger-400',
   };
 
   const changeClasses = {
-    increase: 'text-green-600 dark:text-green-400',
-    decrease: 'text-red-600 dark:text-red-400',
-    neutral: 'text-gray-600 dark:text-gray-400',
+    increase: 'text-success-600 dark:text-success-400',
+    decrease: 'text-danger-600 dark:text-danger-400',
+    neutral: 'text-surface-600 dark:text-surface-400',
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -5 }}
-      className="bg-white dark:bg-gray-800 rounded-2xl shadow-card hover:shadow-lg transition-all duration-300 p-6 border border-gray-200 dark:border-gray-700 min-h-[220px] flex flex-col items-center justify-between"
+      className="bg-white dark:bg-surface-900 rounded-2xl shadow-sm border border-surface-200 dark:border-surface-800 p-4 flex flex-col gap-3"
     >
-      <div className={`w-12 h-12 bg-gradient-to-br ${colorClasses[color]} rounded-full flex items-center justify-center mb-2`}>
-        <Icon className="w-6 h-6 text-white" />
+      <div className="flex items-center gap-3">
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${colorClasses[color]}`}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <h3 className="text-sm font-medium text-surface-500 dark:text-surface-400">{title}</h3>
       </div>
-      <h3 className="text-lg font-bold text-gray-900 dark:text-white text-center mb-2 tracking-wide uppercase">{title}</h3>
-      
+
       {value !== undefined && (
-        <div className="text-3xl font-black text-gray-900 dark:text-white my-2">
-          {value}
+        <div className="text-2xl font-semibold text-surface-900 dark:text-white">{value}</div>
+      )}
+
+      {subStats && subStats.length > 0 && (
+        <div className="flex flex-col gap-1.5 pt-2 border-t border-surface-100 dark:border-surface-800">
+          {subStats.map((stat, idx) => (
+            <div key={idx} className="flex items-center justify-between text-sm">
+              <span className="text-surface-500 dark:text-surface-400">{stat.label}</span>
+              <span className="font-medium text-surface-900 dark:text-white">{stat.value}</span>
+            </div>
+          ))}
         </div>
       )}
 
-      <div className="w-full flex-1 flex flex-col justify-center gap-2">
-        {subStats && subStats.length > 0 && (
-          <div className="flex flex-col gap-2 w-full">
-            {subStats.map((stat, idx) => (
-              <div key={idx} className="flex items-center justify-between w-full px-1">
-                <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">{stat.label}</span>
-                <span className="text-base font-bold text-primary-600 dark:text-primary-400">{stat.value}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
       {change && (
-        <p className={`text-xs font-medium ${changeClasses[changeType]} mt-3 text-center`}>{change}</p>
+        <p className={`text-xs font-medium ${changeClasses[changeType]}`}>{change}</p>
       )}
     </motion.div>
   );

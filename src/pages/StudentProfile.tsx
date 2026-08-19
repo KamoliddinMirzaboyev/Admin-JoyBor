@@ -3,49 +3,124 @@ import { useParams, useNavigate } from 'react-router-dom';
 import BackButton from '../components/UI/BackButton';
 import { BadgeCheck, Calendar, Trash2, Eye, FileText } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { link } from '../data/config';
-import axios from 'axios';
+import { mediaUrl } from '../data/config';
+import api from '../data/api';
 import { toast } from 'sonner';
 import Select from 'react-select';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { invalidateStudentCaches } from '../utils/cacheUtils';
 import { useGlobalEvents } from '../utils/globalEvents';
+import Skeleton from '../components/UI/Skeleton';
 
-// react-select custom styles for dark mode
+type IdRef = number | { id: number; name?: string } | null | undefined;
+
+interface Payment {
+  id: number | string;
+  paid_date: string;
+  amount: number | string;
+  method?: string;
+  status: string;
+}
+
+interface PaymentSummary {
+  total_amount?: number | string;
+  approved_payments?: number;
+  is_debtor?: boolean;
+}
+
+interface StudentForm {
+  id?: number | string;
+  name?: string;
+  last_name?: string;
+  middle_name?: string;
+  phone?: string;
+  jshshir?: string;
+  faculty?: string;
+  direction?: string;
+  group?: string;
+  course?: string;
+  gender?: string;
+  room?: IdRef;
+  room_name?: string;
+  floor?: IdRef;
+  floor_name?: string;
+  province?: IdRef;
+  province_name?: string;
+  district?: IdRef;
+  district_name?: string;
+  dormitory?: IdRef;
+  user?: IdRef;
+  passport?: string;
+  status?: string;
+  placement_status?: string;
+  privilege?: boolean;
+  privilege_share?: number | string;
+  accepted_date?: string;
+  total_payment?: number | string;
+  payment_summary?: PaymentSummary;
+  payments?: Payment[];
+  picture?: string;
+  passport_image_first?: string;
+  passport_image_second?: string;
+  document?: string;
+  is_active?: boolean;
+}
+
+interface ApiError extends Error {
+  response?: { data?: { detail?: string; message?: string } };
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error) {
+    const apiError = error as ApiError;
+    return apiError.response?.data?.detail || apiError.response?.data?.message || apiError.message || fallback;
+  }
+  return fallback;
+}
+
+function toArray<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[];
+  return (data as { results?: T[] } | undefined)?.results || [];
+}
+
+// react-select custom styles for dark mode (brand/surface tokens) — matches Students.tsx
 const selectStyles = {
-  control: (base: any, state: any) => ({
+  control: (base: Record<string, unknown>, state: { isFocused: boolean }) => ({
     ...base,
-    backgroundColor: document.documentElement.classList.contains('dark') ? '#1f2937' : '#fff',
-    borderColor: state.isFocused ? (document.documentElement.classList.contains('dark') ? '#60a5fa' : '#3b82f6') : (document.documentElement.classList.contains('dark') ? '#374151' : '#d1d5db'),
-    boxShadow: state.isFocused ? `0 0 0 2px ${document.documentElement.classList.contains('dark') ? '#60a5fa' : '#3b82f6'}` : undefined,
+    backgroundColor: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff',
+    borderColor: state.isFocused ? '#2563eb' : (document.documentElement.classList.contains('dark') ? '#1e293b' : '#e2e8f0'),
+    boxShadow: state.isFocused ? '0 0 0 2px rgba(37, 99, 235, 0.2)' : undefined,
     minHeight: 40,
     fontSize: 15,
   }),
-  menu: (base: any) => ({
+  menu: (base: Record<string, unknown>) => ({
     ...base,
-    backgroundColor: document.documentElement.classList.contains('dark') ? '#1f2937' : '#fff',
-    color: document.documentElement.classList.contains('dark') ? '#fff' : '#111827',
+    backgroundColor: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff',
+    color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#1e293b',
+    zIndex: 9999,
   }),
-  singleValue: (base: any) => ({
+  singleValue: (base: Record<string, unknown>) => ({
     ...base,
-    color: document.documentElement.classList.contains('dark') ? '#fff' : '#111827',
+    color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#1e293b',
   }),
-  input: (base: any) => ({
+  input: (base: Record<string, unknown>) => ({
     ...base,
-    color: document.documentElement.classList.contains('dark') ? '#fff' : '#111827',
+    color: document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#1e293b',
   }),
-  placeholder: (base: any) => ({
+  placeholder: (base: Record<string, unknown>) => ({
     ...base,
-    color: document.documentElement.classList.contains('dark') ? '#d1d5db' : '#6b7280',
+    color: '#94a3b8',
   }),
-  option: (base: any, state: any) => ({
+  option: (base: Record<string, unknown>, state: { isSelected: boolean; isFocused: boolean }) => ({
     ...base,
     backgroundColor: state.isSelected
-      ? (document.documentElement.classList.contains('dark') ? '#2563eb' : '#3b82f6')
+      ? '#2563eb'
       : state.isFocused
-        ? (document.documentElement.classList.contains('dark') ? '#374151' : '#e0e7ef')
+        ? (document.documentElement.classList.contains('dark') ? '#1e293b' : '#eff6ff')
         : 'transparent',
-    color: state.isSelected || document.documentElement.classList.contains('dark') ? '#fff' : '#111827',
+    color: state.isSelected
+      ? '#ffffff'
+      : (document.documentElement.classList.contains('dark') ? '#f1f5f9' : '#1e293b'),
     cursor: 'pointer',
   }),
 };
@@ -64,10 +139,10 @@ function ReadOnlyInput({ label, value, type }: { label: string; value?: string |
 
   return (
     <div className="flex flex-col gap-1 w-full">
-      <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{label}</label>
-      <div className={`bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-base font-medium cursor-default focus:outline-none focus:ring-2 focus:ring-blue-300 w-full flex items-center ${type === 'date' || type === 'currency' ? 'text-blue-600 dark:text-blue-300' : ''}`}>
-        {type === 'date' && <Calendar className="w-4 h-4 mr-2 text-blue-500 dark:text-blue-400" />}
-        {type === 'currency' && <span className="mr-2 text-green-500 dark:text-green-400">₩</span>}
+      <label className="text-xs text-surface-500 dark:text-surface-400 font-medium mb-1">{label}</label>
+      <div className={`bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-xl px-3 py-2 text-surface-900 dark:text-white text-base font-medium cursor-default focus:outline-none focus:ring-2 focus:ring-brand-500/40 w-full flex items-center ${type === 'date' || type === 'currency' ? 'text-brand-600 dark:text-brand-400' : ''}`}>
+        {type === 'date' && <Calendar className="w-4 h-4 mr-2 text-brand-500 dark:text-brand-400" />}
+        {type === 'currency' && <span className="mr-2 text-success-500 dark:text-success-400">₩</span>}
         {displayValue}
       </div>
     </div>
@@ -92,9 +167,9 @@ function EditableInput({ label, value, onChange, type = 'text' }: { label: strin
 
   return (
     <div className="flex flex-col gap-1 w-full">
-      <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{label}</label>
+      <label className="text-xs text-surface-500 dark:text-surface-400 font-medium mb-1">{label}</label>
       <input
-        className="bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-300 w-full"
+        className="bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl px-3 py-2 text-surface-900 dark:text-white text-base font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/40 w-full transition-colors duration-150"
         value={inputValue}
         onChange={e => onChange(e.target.value)}
         type={inputType}
@@ -110,11 +185,12 @@ const StudentProfile: React.FC = () => {
   const { emitStudentUpdate, subscribe } = useGlobalEvents();
   const [editMode, setEditMode] = useState(false);
   const [hasEdited, setHasEdited] = useState(false);
-  const [form, setForm] = useState<Record<string, unknown> | null>(null);
+  const [form, setForm] = useState<StudentForm | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // States for file uploads
@@ -140,19 +216,9 @@ const StudentProfile: React.FC = () => {
     isLoading,
     error,
     refetch
-  } = useQuery({
+  } = useQuery<StudentForm>({
     queryKey: ['studentProfile', studentId],
-    queryFn: async () => {
-      const token = sessionStorage.getItem('access');
-      const response = await fetch(`${link}/students/${studentId}/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!response.ok) throw new Error('Talaba ma\'lumotlarini yuklashda xatolik');
-      return response.json();
-    },
+    queryFn: () => api.getStudent(studentId as string),
     enabled: !!studentId,
     staleTime: 1000 * 60 * 5,
   });
@@ -164,6 +230,7 @@ const StudentProfile: React.FC = () => {
         course: student.course || '1-kurs',
         gender: student.gender || 'Erkak',
       });
+      setImageLoadFailed(false);
     }
   }, [student]);
 
@@ -189,35 +256,15 @@ const StudentProfile: React.FC = () => {
 
   // Fetch provinces
   useEffect(() => {
-    const token = sessionStorage.getItem("access");
-    const headers: HeadersInit = token ? { "Authorization": `Bearer ${token}` } : {};
-    fetch(`${link}/provinces/`, { headers })
-      .then(res => {
-        if (!res.ok) throw new Error("Viloyatlarni yuklashda xatolik");
-        return res.json();
-      })
-      .then(data => {
-        // Handle both array and { results: [] } format
-        const provincesArray = Array.isArray(data) ? data : (data.results || []);
-        setProvinces(provincesArray);
-      })
+    api.getProvinces()
+      .then(data => setProvinces(toArray<{ id: number; name: string }>(data)))
       .catch(() => setProvinces([]));
   }, []);
 
   // Fetch floors
   useEffect(() => {
-    const token = sessionStorage.getItem("access");
-    const headers: HeadersInit = token ? { "Authorization": `Bearer ${token}` } : {};
-    fetch(`${link}/floors/`, { headers })
-      .then(res => {
-        if (!res.ok) throw new Error("Qavatlarni yuklashda xatolik");
-        return res.json();
-      })
-      .then(data => {
-        // Handle both array and { results: [] } format
-        const floorsArray = Array.isArray(data) ? data : (data.results || []);
-        setFloors(floorsArray);
-      })
+    api.getFloors()
+      .then(data => setFloors(toArray<{ id: number; name: string }>(data)))
       .catch(() => setFloors([]));
   }, []);
 
@@ -231,18 +278,8 @@ const StudentProfile: React.FC = () => {
       return;
     }
 
-    const token = sessionStorage.getItem("access");
-    const headers: HeadersInit = token ? { "Authorization": `Bearer ${token}` } : {};
-    fetch(`${link}/districts/?province=${provinceId}`, { headers })
-      .then(res => {
-        if (!res.ok) throw new Error("Tumanlarni yuklashda xatolik");
-        return res.json();
-      })
-      .then(data => {
-        // Handle both array and { results: [] } format
-        const districtsArray = Array.isArray(data) ? data : (data.results || []);
-        setDistricts(districtsArray);
-      })
+    api.getDistricts(provinceId)
+      .then(data => setDistricts(toArray<{ id: number; name: string; province: number }>(data)))
       .catch(() => setDistricts([]));
   }, [form?.province]);
 
@@ -256,18 +293,11 @@ const StudentProfile: React.FC = () => {
       return;
     }
 
-    const token = sessionStorage.getItem("access");
-    const headers: HeadersInit = token ? { "Authorization": `Bearer ${token}` } : {};
-    fetch(`${link}/rooms/?floor=${floorId}`, { headers })
-      .then(res => {
-        if (!res.ok) throw new Error("Xonalarni yuklashda xatolik");
-        return res.json();
-      })
+    api.getRooms(floorId)
       .then(data => {
-        // Handle both array and { results: [] } format
-        const roomsArray = Array.isArray(data) ? data : (data.results || []);
+        const roomsArray = toArray<{ id: number; name: string; floor: number }>(data);
         // Xona raqami bo'yicha saralash
-        const sortedRooms = roomsArray.sort((a: any, b: any) => {
+        const sortedRooms = [...roomsArray].sort((a, b) => {
           const aNum = parseInt(a.name.replace(/\D/g, '')) || 0;
           const bNum = parseInt(b.name.replace(/\D/g, '')) || 0;
           return aNum - bNum;
@@ -316,11 +346,16 @@ const StudentProfile: React.FC = () => {
   ];
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-[60vh]"><div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-solid"></div></div>;
+    return (
+      <div className="w-full max-w-6xl mx-auto bg-white dark:bg-surface-900 rounded-2xl shadow-sm p-4 sm:p-6 md:p-8 border border-surface-200 dark:border-surface-800">
+        <Skeleton className="h-8 w-48 mb-6" />
+        <Skeleton className="h-40 w-full rounded-2xl" count={3} />
+      </div>
+    );
   }
   if (error || !student || !form) {
     return (
-      <div className="p-8 text-center text-red-500">
+      <div className="p-8 text-center text-danger-500">
         {error ? 'Maʼlumotlarni yuklashda xatolik.' : 'Talaba topilmadi.'} <BackButton label="Orqaga qaytish" className="mx-auto mt-4" />
       </div>
     );
@@ -334,6 +369,7 @@ const StudentProfile: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       setPictureFile(file);
+      setImageLoadFailed(false);
       const reader = new FileReader();
       reader.onload = () => {
         setImagePreview(reader.result as string);
@@ -389,23 +425,26 @@ const StudentProfile: React.FC = () => {
       return;
     }
 
-    // Imtiyoz uchun boolean value
     if (field === 'privilege') {
       setForm(f => f ? { ...f, [field]: option.value } : f);
       return;
     }
 
-    // For ID fields, store just the ID number
-    setForm(f => f ? { ...f, [field]: option.value } : f);
+    setForm(f => {
+      if (!f) return f;
+      const next = { ...f, [field]: option.value };
+      if (field === 'province') next.district = null;
+      if (field === 'floor') next.room = null;
+      return next;
+    });
   };
 
   const handleSave = async () => {
     if (!studentId || !form) return;
-    
+
     setSaving(true);
 
     try {
-      const token = sessionStorage.getItem('access');
       const formDataPayload = new FormData();
 
       // Basic string fields
@@ -433,7 +472,7 @@ const StudentProfile: React.FC = () => {
       if (form.privilege !== undefined) {
         formDataPayload.append('privilege', String(Boolean(form.privilege)));
       }
-      
+
       if (form.is_active !== undefined) {
         formDataPayload.append('is_active', String(Boolean(form.is_active)));
       }
@@ -447,13 +486,13 @@ const StudentProfile: React.FC = () => {
       if (form.status !== undefined) {
         formDataPayload.append('status', String(form.status || 'Tekshirilmaydi'));
       }
-      
+
       if (form.placement_status !== undefined) {
         formDataPayload.append('placement_status', String(form.placement_status || 'Qabul qilindi'));
       }
 
       // ID fields
-      const extractId = (value: any): number | undefined => {
+      const extractId = (value: IdRef): number | undefined => {
         if (!value) return undefined;
         if (typeof value === 'number') return value;
         if (typeof value === 'object' && value.id) return Number(value.id);
@@ -492,25 +531,7 @@ const StudentProfile: React.FC = () => {
         formDataPayload.append('document', documentFile);
       }
 
-      console.log('Updating student with FormData');
-
-      const response = await fetch(`${link}/students/${studentId}/`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          // No Content-Type header - browser will set it to multipart/form-data
-        },
-        body: formDataPayload,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Update error:', errorData);
-        throw new Error(errorData.detail || errorData.message || 'Xatolik yuz berdi');
-      }
-
-      const result = await response.json();
-      console.log('Update success:', result);
+      await api.updateStudent(studentId, formDataPayload);
 
       toast.success('Talaba maʼlumotlari saqlandi!');
       setEditMode(false);
@@ -530,10 +551,8 @@ const StudentProfile: React.FC = () => {
       await refetch();
       // Emit global event
       emitStudentUpdate({ action: 'updated', id: studentId });
-    } catch (error: any) {
-      console.error('Save error:', error);
-      const errorMessage = error.message || 'Xatolik yuz berdi!';
-      toast.error(errorMessage);
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Xatolik yuz berdi!'));
     } finally {
       setSaving(false);
     }
@@ -544,15 +563,7 @@ const StudentProfile: React.FC = () => {
 
     setDeleting(true);
     try {
-      const token = sessionStorage.getItem('access');
-      await axios.delete(
-        `${link}/students/${studentId}/`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          }
-        }
-      );
+      await api.deleteStudent(studentId);
 
       toast.success('Talaba muvaffaqiyatli o\'chirildi!');
 
@@ -563,35 +574,31 @@ const StudentProfile: React.FC = () => {
 
       // Students sahifasiga qaytish
       window.location.href = '/students';
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail ||
-        error.response?.data?.message ||
-        error.message ||
-        'Talabani o\'chirishda xatolik yuz berdi!';
-      toast.error(errorMessage);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Talabani o'chirishda xatolik yuz berdi!"));
     } finally {
       setDeleting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-4 sm:py-6 px-1 sm:px-2 flex flex-col items-center">
-      <div className="w-full max-w-4xl bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-2 sm:p-6 md:p-8 border border-gray-100 dark:border-slate-700">
+    <div className="pb-8">
+      <div className="w-full max-w-6xl mx-auto bg-white dark:bg-surface-900 rounded-2xl shadow-sm p-4 sm:p-6 md:p-8 border border-surface-200 dark:border-surface-800">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
-          <BackButton 
-            label="Orqaga" 
-            onClick={() => hasEdited ? navigate('/students') : navigate(-1)} 
+          <BackButton
+            label="Orqaga"
+            onClick={() => hasEdited ? navigate('/students') : navigate(-1)}
           />
 
           <div className="flex items-center gap-2 justify-center">
-            <BadgeCheck className="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 dark:text-blue-300" />
-            <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Talaba profili</h1>
+            <BadgeCheck className="w-6 h-6 sm:w-7 sm:h-7 text-brand-600 dark:text-brand-400" />
+            <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-surface-900 dark:text-white">Talaba profili</h1>
           </div>
 
           <div className="flex gap-2">
             {editMode && (
               <button
-                className="px-3 sm:px-4 py-2 rounded-lg bg-gray-500 text-white font-semibold hover:bg-gray-600 transition text-sm sm:text-base"
+                className="px-3 sm:px-4 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-surface-100 dark:bg-surface-800 text-surface-700 dark:text-surface-200 font-semibold hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors duration-150 text-sm sm:text-base"
                 onClick={() => {
                   setEditMode(false);
                   setForm(student); // Reset form to original data
@@ -602,7 +609,7 @@ const StudentProfile: React.FC = () => {
               </button>
             )}
             <button
-              className="px-3 sm:px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition text-sm sm:text-base disabled:opacity-60 disabled:cursor-not-allowed"
+              className="px-3 sm:px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition-colors duration-150 text-sm sm:text-base disabled:opacity-60 disabled:cursor-not-allowed"
               onClick={() => editMode ? handleSave() : setEditMode(true)}
               disabled={saving}
             >
@@ -610,7 +617,7 @@ const StudentProfile: React.FC = () => {
             </button>
             {!editMode && (
               <button
-                className="px-3 sm:px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center gap-2"
+                className="px-3 sm:px-4 py-2 rounded-xl bg-danger-600 text-white font-semibold hover:bg-danger-700 transition-colors duration-150 text-sm sm:text-base flex items-center gap-2"
                 onClick={() => setShowDeleteModal(true)}
               >
                 <Trash2 className="w-4 h-4" />
@@ -622,24 +629,23 @@ const StudentProfile: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Profil rasmi yoki avatar */}
           <div className="relative">
-            {imagePreview || (form as Record<string, any>)?.picture ? (
+            {(imagePreview || form.picture) && !imageLoadFailed ? (
               <img
-                src={imagePreview || (((form as Record<string, any>).picture as string)?.startsWith('http')
-                  ? (form as Record<string, any>).picture as string
-                  : link + (form as Record<string, any>).picture)}
-                alt={(form as Record<string, any>).name as string}
-                className="w-32 h-32 object-cover rounded-md border border-gray-200 dark:border-slate-600 shadow"
+                src={imagePreview || mediaUrl(form.picture)}
+                alt={form.name}
+                onError={() => setImageLoadFailed(true)}
+                className="w-36 h-36 sm:w-44 sm:h-44 object-cover rounded-xl border border-surface-200 dark:border-surface-700"
               />
             ) : (
-              <div className="w-32 h-32 flex items-center justify-center bg-gray-200 dark:bg-slate-700 text-5xl font-bold text-gray-500 dark:text-gray-400 rounded-md border border-gray-200 dark:border-slate-600 shadow">
-                {(form as Record<string, any>)?.name && (form as Record<string, any>)?.last_name
-                  ? `${((form as Record<string, any>).name as string)[0] || ''}${((form as Record<string, any>).last_name as string)[0] || ''}`
+              <div className="w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center bg-brand-50 dark:bg-brand-900/20 text-5xl font-bold text-brand-600 dark:text-brand-400 rounded-xl border border-surface-200 dark:border-surface-700">
+                {form.name && form.last_name
+                  ? `${form.name[0] || ''}${form.last_name[0] || ''}`
                   : ''}
               </div>
             )}
 
             {editMode && (
-              <div className="absolute inset-0 bg-black bg-opacity-50 rounded-md flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+              <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-150 cursor-pointer">
                 <input
                   type="file"
                   accept="image/*"
@@ -650,10 +656,10 @@ const StudentProfile: React.FC = () => {
               </div>
             )}
 
-            {editMode && (imagePreview || (form as Record<string, any>)?.picture) && (
+            {editMode && (imagePreview || form.picture) && (
               <button
                 onClick={removeImage}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
+                className="absolute -top-2 -right-2 bg-danger-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-danger-600 transition-colors duration-150"
               >
                 ×
               </button>
@@ -662,19 +668,29 @@ const StudentProfile: React.FC = () => {
           <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {editMode ? (
               <>
-                <EditableInput label="Ism" value={(form as Record<string, any>)?.name as string} onChange={v => handleChange('name', v)} />
-                <EditableInput label="Familiya" value={(form as Record<string, any>)?.last_name as string} onChange={v => handleChange('last_name', v)} />
-                <EditableInput label="Otasining ismi" value={(form as Record<string, any>)?.middle_name as string} onChange={v => handleChange('middle_name', v)} />
-                <EditableInput label="Telefon" value={(form as Record<string, any>)?.phone as string} onChange={v => handleChange('phone', v)} />
-                <EditableInput label="JSHSHIR" value={(form as Record<string, any>)?.jshshir as string} onChange={v => handleChange('jshshir', v)} />
+                <EditableInput label="Ism" value={form.name} onChange={v => handleChange('name', v)} />
+                <EditableInput label="Familiya" value={form.last_name} onChange={v => handleChange('last_name', v)} />
+                <EditableInput label="Otasining ismi" value={form.middle_name} onChange={v => handleChange('middle_name', v)} />
+                <EditableInput label="Telefon" value={form.phone} onChange={v => handleChange('phone', v)} />
+                <EditableInput label="Passport ID" value={form.passport || ''} onChange={v => handleChange('passport', v)} />
+                <ReadOnlyInput
+                  label="Jami to'lov"
+                  value={form.payment_summary?.total_amount || form.total_payment}
+                  type="currency"
+                />
               </>
             ) : (
               <>
-                <ReadOnlyInput label="Ism" value={(form as Record<string, any>)?.name as string} />
-                <ReadOnlyInput label="Familiya" value={(form as Record<string, any>)?.last_name as string} />
-                <ReadOnlyInput label="Otasining ismi" value={(form as Record<string, any>)?.middle_name as string} />
-                <ReadOnlyInput label="Telefon" value={(form as Record<string, any>)?.phone as string} />
-                <ReadOnlyInput label="JSHSHIR" value={(form as Record<string, any>)?.jshshir as string} />
+                <ReadOnlyInput label="Ism" value={form.name} />
+                <ReadOnlyInput label="Familiya" value={form.last_name} />
+                <ReadOnlyInput label="Otasining ismi" value={form.middle_name} />
+                <ReadOnlyInput label="Telefon" value={form.phone} />
+                <ReadOnlyInput label="Passport ID" value={form.passport} />
+                <ReadOnlyInput
+                  label="Jami to'lov"
+                  value={form.payment_summary?.total_amount || form.total_payment}
+                  type="currency"
+                />
               </>
             )}
           </div>
@@ -682,16 +698,16 @@ const StudentProfile: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 md:gap-8 mt-4 sm:mt-6">
           {editMode ? (
             <>
-              <EditableInput label="Fakultet" value={(form as Record<string, any>).faculty} onChange={v => handleChange('faculty', v)} />
-              <EditableInput label="Yo'nalish" value={(form as Record<string, any>).direction} onChange={v => handleChange('direction', v)} />
-              <EditableInput label="Guruh" value={(form as Record<string, any>).group || ''} onChange={v => handleChange('group', v)} />
-              
+              <EditableInput label="Fakultet" value={form.faculty} onChange={v => handleChange('faculty', v)} />
+              <EditableInput label="Yo'nalish" value={form.direction} onChange={v => handleChange('direction', v)} />
+              <EditableInput label="Guruh" value={form.group || ''} onChange={v => handleChange('group', v)} />
+
               {/* Course Select */}
               <div className="flex flex-col gap-1 w-full">
-                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Kurs</label>
+                <label className="text-xs text-surface-500 dark:text-surface-400 font-medium mb-1">Kurs</label>
                 <Select
                   options={courseOptions}
-                  value={courseOptions.find(opt => opt.value === (form as Record<string, any>).course) || null}
+                  value={courseOptions.find(opt => opt.value === form.course) || null}
                   onChange={opt => handleSelectChange('course', opt)}
                   isClearable
                   placeholder="Kursni tanlang..."
@@ -702,10 +718,10 @@ const StudentProfile: React.FC = () => {
 
               {/* Gender Select */}
               <div className="flex flex-col gap-1 w-full">
-                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Jins</label>
+                <label className="text-xs text-surface-500 dark:text-surface-400 font-medium mb-1">Jins</label>
                 <Select
                   options={genderOptions}
-                  value={genderOptions.find(opt => opt.value === (form as Record<string, any>).gender) || null}
+                  value={genderOptions.find(opt => opt.value === form.gender) || null}
                   onChange={opt => handleSelectChange('gender', opt)}
                   isClearable
                   placeholder="Jinsni tanlang..."
@@ -715,11 +731,11 @@ const StudentProfile: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-1 w-full">
-                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Qavat</label>
+                <label className="text-xs text-surface-500 dark:text-surface-400 font-medium mb-1">Qavat</label>
                 <Select
                   options={floorOptions}
                   value={floorOptions.find(opt => {
-                    const floorValue = (form as Record<string, any>).floor;
+                    const floorValue = form.floor;
                     const floorId = typeof floorValue === 'object' ? floorValue?.id : floorValue;
                     return opt.value === floorId;
                   }) || null}
@@ -731,11 +747,11 @@ const StudentProfile: React.FC = () => {
                 />
               </div>
               <div className="flex flex-col gap-1 w-full">
-                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Xona</label>
+                <label className="text-xs text-surface-500 dark:text-surface-400 font-medium mb-1">Xona</label>
                 <Select
                   options={roomOptions}
                   value={roomOptions.find(opt => {
-                    const roomValue = (form as Record<string, any>).room;
+                    const roomValue = form.room;
                     const roomId = typeof roomValue === 'object' ? roomValue?.id : roomValue;
                     return opt.value === roomId;
                   }) || null}
@@ -744,15 +760,15 @@ const StudentProfile: React.FC = () => {
                   placeholder="Xona tanlang..."
                   styles={selectStyles}
                   classNamePrefix="react-select"
-                  isDisabled={!(form as Record<string, any>).floor}
+                  isDisabled={!form.floor}
                 />
               </div>
               <div className="flex flex-col gap-1 w-full">
-                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Viloyat</label>
+                <label className="text-xs text-surface-500 dark:text-surface-400 font-medium mb-1">Viloyat</label>
                 <Select
                   options={provinceOptions}
                   value={provinceOptions.find(opt => {
-                    const provinceValue = (form as Record<string, any>).province;
+                    const provinceValue = form.province;
                     const provinceId = typeof provinceValue === 'object' ? provinceValue?.id : provinceValue;
                     return opt.value === provinceId;
                   }) || null}
@@ -764,11 +780,11 @@ const StudentProfile: React.FC = () => {
                 />
               </div>
               <div className="flex flex-col gap-1 w-full">
-                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Tuman</label>
+                <label className="text-xs text-surface-500 dark:text-surface-400 font-medium mb-1">Tuman</label>
                 <Select
                   options={districtOptions}
                   value={districtOptions.find(opt => {
-                    const districtValue = (form as Record<string, any>).district;
+                    const districtValue = form.district;
                     const districtId = typeof districtValue === 'object' ? districtValue?.id : districtValue;
                     return opt.value === districtId;
                   }) || null}
@@ -777,17 +793,15 @@ const StudentProfile: React.FC = () => {
                   placeholder="Tuman tanlang..."
                   styles={selectStyles}
                   classNamePrefix="react-select"
-                  isDisabled={!(form as Record<string, any>).province}
+                  isDisabled={!form.province}
                 />
               </div>
-              <EditableInput label="Pasport" value={(form as Record<string, any>).passport || ''} onChange={v => handleChange('passport', v)} />
-
               {/* Status Select */}
               <div className="flex flex-col gap-1 w-full">
-                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Holati</label>
+                <label className="text-xs text-surface-500 dark:text-surface-400 font-medium mb-1">Holati</label>
                 <Select
                   options={statusOptions}
-                  value={statusOptions.find(opt => opt.value === (form as Record<string, any>).status) || null}
+                  value={statusOptions.find(opt => opt.value === form.status) || null}
                   onChange={opt => handleSelectChange('status', opt)}
                   isClearable
                   placeholder="Holatni tanlang..."
@@ -798,10 +812,10 @@ const StudentProfile: React.FC = () => {
 
               {/* Placement Status Select */}
               <div className="flex flex-col gap-1 w-full">
-                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Joylashish holati</label>
+                <label className="text-xs text-surface-500 dark:text-surface-400 font-medium mb-1">Joylashish holati</label>
                 <Select
                   options={placementStatusOptions}
-                  value={placementStatusOptions.find(opt => opt.value === (form as Record<string, any>).placement_status) || null}
+                  value={placementStatusOptions.find(opt => opt.value === form.placement_status) || null}
                   onChange={opt => handleSelectChange('placement_status', opt)}
                   isClearable
                   placeholder="Joylashish holatini tanlang..."
@@ -812,10 +826,10 @@ const StudentProfile: React.FC = () => {
 
               {/* Imtiyoz Select */}
               <div className="flex flex-col gap-1 w-full">
-                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Imtiyoz</label>
+                <label className="text-xs text-surface-500 dark:text-surface-400 font-medium mb-1">Imtiyoz</label>
                 <Select
                   options={privilegeOptions}
-                  value={privilegeOptions.find(opt => opt.value === (form as Record<string, any>).privilege) || null}
+                  value={privilegeOptions.find(opt => opt.value === form.privilege) || null}
                   onChange={opt => handleSelectChange('privilege', opt)}
                   isClearable
                   placeholder="Imtiyoz tanlang..."
@@ -825,83 +839,66 @@ const StudentProfile: React.FC = () => {
               </div>
 
               {/* Imtiyoz ulushi - faqat imtiyoz belgilangan bo'lsa ko'rsatish */}
-              {(form as Record<string, any>).privilege && (
+              {form.privilege && (
                 <div className="flex flex-col gap-1 w-full">
-                  <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Imtiyoz ulushi (%)</label>
+                  <label className="text-xs text-surface-500 dark:text-surface-400 font-medium mb-1">Imtiyoz ulushi (%)</label>
                   <input
                     type="number"
                     min="0"
                     max="100"
-                    value={(form as Record<string, any>).privilege_share || ''}
+                    value={form.privilege_share || ''}
                     onChange={e => handleChange('privilege_share', e.target.value)}
-                    className="bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-300 w-full"
+                    className="bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-xl px-3 py-2 text-surface-900 dark:text-white text-base font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/40 w-full transition-colors duration-150"
                     placeholder="Imtiyoz ulushi"
                   />
                 </div>
               )}
-              <ReadOnlyInput label="Qabul qilingan sana" value={(form as Record<string, any>).accepted_date} type="date" />
-              <ReadOnlyInput 
-                label="Jami to'lov" 
-                value={
-                  (form as any).payment_summary?.total_amount || 
-                  (form as Record<string, any>).total_payment
-                } 
-                type="currency" 
-              />
+              <ReadOnlyInput label="Qabul qilingan sana" value={form.accepted_date} type="date" />
             </>
           ) : (
             <>
-              <ReadOnlyInput label="Fakultet" value={(form as Record<string, any>).faculty} />
-              <ReadOnlyInput label="Yo'nalish" value={(form as Record<string, any>).direction} />
-              <ReadOnlyInput label="Guruh" value={(form as Record<string, any>).group} />
-              <ReadOnlyInput label="Kurs" value={(form as Record<string, any>).course} />
-              <ReadOnlyInput label="Jins" value={(form as Record<string, any>).gender} />
-              <ReadOnlyInput label="Xona" value={(form as Record<string, any>).room_name} />
-              <ReadOnlyInput label="Qavat" value={(form as Record<string, any>).floor_name} />
-              <ReadOnlyInput label="Viloyat" value={(form as Record<string, any>).province_name} />
-              <ReadOnlyInput label="Tuman" value={(form as Record<string, any>).district_name} />
-              <ReadOnlyInput label="Pasport" value={(form as Record<string, any>).passport} />
-              <ReadOnlyInput label="Holati" value={(form as Record<string, any>).status} />
-              <ReadOnlyInput label="Joylashish holati" value={(form as Record<string, any>).placement_status} />
+              <ReadOnlyInput label="Fakultet" value={form.faculty} />
+              <ReadOnlyInput label="Yo'nalish" value={form.direction} />
+              <ReadOnlyInput label="Guruh" value={form.group} />
+              <ReadOnlyInput label="Kurs" value={form.course} />
+              <ReadOnlyInput label="Jins" value={form.gender} />
+              <ReadOnlyInput label="Xona" value={form.room_name} />
+              <ReadOnlyInput label="Qavat" value={form.floor_name} />
+              <ReadOnlyInput label="Viloyat" value={form.province_name} />
+              <ReadOnlyInput label="Tuman" value={form.district_name} />
+              <ReadOnlyInput label="Holati" value={form.status} />
+              <ReadOnlyInput label="Joylashish holati" value={form.placement_status} />
               <ReadOnlyInput
                 label="Imtiyoz"
-                value={(form as Record<string, any>).privilege ? 'Imtiyozli' : 'Imtiyozsiz'}
+                value={form.privilege ? 'Imtiyozli' : 'Imtiyozsiz'}
               />
-              {(form as Record<string, any>).privilege && (form as Record<string, any>).privilege_share && (
+              {form.privilege && form.privilege_share && (
                 <ReadOnlyInput
                   label="Imtiyoz ulushi"
-                  value={`${(form as Record<string, any>).privilege_share}%`}
+                  value={`${form.privilege_share}%`}
                 />
               )}
-              <ReadOnlyInput label="Qabul qilingan sana" value={(form as Record<string, any>).accepted_date} type="date" />
-              <ReadOnlyInput 
-                label="Jami to'lov" 
-                value={
-                  (form as any).payment_summary?.total_amount || 
-                  (form as Record<string, any>).total_payment
-                } 
-                type="currency" 
-              />
+              <ReadOnlyInput label="Qabul qilingan sana" value={form.accepted_date} type="date" />
             </>
           )}
         </div>
 
         {/* Hujjatlar bo'limi */}
         {editMode ? (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-4 sm:p-6 border mt-6 border-gray-200 dark:border-slate-700 w-full">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center gap-2">
-              <BadgeCheck className="w-5 h-5 text-blue-500" />
+          <div className="bg-white dark:bg-surface-900 rounded-2xl shadow-sm p-4 sm:p-6 border mt-6 border-surface-200 dark:border-surface-800 w-full">
+            <h2 className="text-lg sm:text-xl font-bold text-surface-900 dark:text-white mb-4 sm:mb-6 flex items-center gap-2">
+              <BadgeCheck className="w-5 h-5 text-brand-500" />
               Hujjatlarni tahrirlash
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Pasport (old) */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Pasport (old tomoni)</label>
-                <div className="relative aspect-video bg-gray-100 dark:bg-slate-900 rounded-xl overflow-hidden border border-dashed border-gray-300 dark:border-slate-600 flex items-center justify-center">
-                  {passportFirstPreview || (form as any).passport_image_first ? (
-                    <img src={passportFirstPreview || (form as any).passport_image_first} className="w-full h-full object-contain" alt="Pasport old" />
+                <label className="text-xs font-medium text-surface-500 dark:text-surface-400">Pasport (old tomoni)</label>
+                <div className="relative aspect-video bg-surface-100 dark:bg-surface-900 rounded-xl overflow-hidden border border-dashed border-surface-300 dark:border-surface-700 flex items-center justify-center">
+                  {passportFirstPreview || form.passport_image_first ? (
+                    <img src={passportFirstPreview || form.passport_image_first} className="w-full h-full object-contain" alt="Pasport old" />
                   ) : (
-                    <FileText className="w-8 h-8 text-gray-400" />
+                    <FileText className="w-8 h-8 text-surface-400" />
                   )}
                   <input type="file" accept="image/*" onChange={handlePassportFirstChange} className="absolute inset-0 opacity-0 cursor-pointer" />
                 </div>
@@ -909,12 +906,12 @@ const StudentProfile: React.FC = () => {
 
               {/* Pasport (orqa) */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Pasport (orqa tomoni)</label>
-                <div className="relative aspect-video bg-gray-100 dark:bg-slate-900 rounded-xl overflow-hidden border border-dashed border-gray-300 dark:border-slate-600 flex items-center justify-center">
-                  {passportSecondPreview || (form as any).passport_image_second ? (
-                    <img src={passportSecondPreview || (form as any).passport_image_second} className="w-full h-full object-contain" alt="Pasport orqa" />
+                <label className="text-xs font-medium text-surface-500 dark:text-surface-400">Pasport (orqa tomoni)</label>
+                <div className="relative aspect-video bg-surface-100 dark:bg-surface-900 rounded-xl overflow-hidden border border-dashed border-surface-300 dark:border-surface-700 flex items-center justify-center">
+                  {passportSecondPreview || form.passport_image_second ? (
+                    <img src={passportSecondPreview || form.passport_image_second} className="w-full h-full object-contain" alt="Pasport orqa" />
                   ) : (
-                    <FileText className="w-8 h-8 text-gray-400" />
+                    <FileText className="w-8 h-8 text-surface-400" />
                   )}
                   <input type="file" accept="image/*" onChange={handlePassportSecondChange} className="absolute inset-0 opacity-0 cursor-pointer" />
                 </div>
@@ -922,15 +919,15 @@ const StudentProfile: React.FC = () => {
 
               {/* Qo'shimcha hujjat */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Qo'shimcha hujjat</label>
-                <div className="relative aspect-video bg-gray-100 dark:bg-slate-900 rounded-xl overflow-hidden border border-dashed border-gray-300 dark:border-slate-600 flex items-center justify-center">
-                  {documentPreview || (form as any).document ? (
+                <label className="text-xs font-medium text-surface-500 dark:text-surface-400">Qo'shimcha hujjat</label>
+                <div className="relative aspect-video bg-surface-100 dark:bg-surface-900 rounded-xl overflow-hidden border border-dashed border-surface-300 dark:border-surface-700 flex items-center justify-center">
+                  {documentPreview || form.document ? (
                     <div className="flex flex-col items-center gap-1">
-                      <FileText className="w-8 h-8 text-blue-500" />
-                      <span className="text-[10px] text-gray-500">Hujjat tanlangan</span>
+                      <FileText className="w-8 h-8 text-brand-500" />
+                      <span className="text-[10px] text-surface-500">Hujjat tanlangan</span>
                     </div>
                   ) : (
-                    <FileText className="w-8 h-8 text-gray-400" />
+                    <FileText className="w-8 h-8 text-surface-400" />
                   )}
                   <input type="file" onChange={handleDocumentChange} className="absolute inset-0 opacity-0 cursor-pointer" />
                 </div>
@@ -938,21 +935,21 @@ const StudentProfile: React.FC = () => {
             </div>
           </div>
         ) : form && (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-4 sm:p-6 border mt-6 border-gray-200 dark:border-slate-700 w-full">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center gap-2">
-              <BadgeCheck className="w-5 h-5 text-blue-500" />
+          <div className="bg-white dark:bg-surface-900 rounded-2xl shadow-sm p-4 sm:p-6 border mt-6 border-surface-200 dark:border-surface-800 w-full">
+            <h2 className="text-lg sm:text-xl font-bold text-surface-900 dark:text-white mb-4 sm:mb-6 flex items-center gap-2">
+              <BadgeCheck className="w-5 h-5 text-brand-500" />
               Hujjatlar
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
               {/* Pasport old tomoni */}
-              {(form as Record<string, any>).passport_image_first && (
-                <div 
-                  className="group relative bg-gray-50 dark:bg-slate-700/30 rounded-xl overflow-hidden border border-gray-100 dark:border-slate-700 cursor-pointer hover:shadow-md transition-all duration-300"
-                  onClick={() => setSelectedImage((form as Record<string, any>).passport_image_first)}
+              {form.passport_image_first && (
+                <div
+                  className="group relative bg-surface-50 dark:bg-surface-800/30 rounded-xl overflow-hidden border border-surface-100 dark:border-surface-800 cursor-pointer shadow-sm hover:shadow-md transition-all duration-300"
+                  onClick={() => setSelectedImage(form.passport_image_first ?? null)}
                 >
-                  <div className="aspect-[3/4] sm:aspect-video bg-gray-100 dark:bg-slate-900 flex items-center justify-center relative overflow-hidden">
+                  <div className="aspect-[3/4] sm:aspect-video bg-surface-100 dark:bg-surface-900 flex items-center justify-center relative overflow-hidden">
                     <img
-                      src={(form as Record<string, any>).passport_image_first}
+                      src={form.passport_image_first}
                       alt="Pasport old tomoni"
                       className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
                     />
@@ -960,21 +957,21 @@ const StudentProfile: React.FC = () => {
                        <Eye className="text-white w-6 h-6 sm:w-8 sm:h-8" />
                     </div>
                   </div>
-                  <div className="p-2 sm:p-3 bg-white dark:bg-slate-800 text-center border-t border-gray-50 dark:border-slate-700">
-                    <div className="text-[10px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate">Pasport (old)</div>
+                  <div className="p-2 sm:p-3 bg-white dark:bg-surface-900 text-center border-t border-surface-50 dark:border-surface-800">
+                    <div className="text-[10px] sm:text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider truncate">Pasport (old)</div>
                   </div>
                 </div>
               )}
-              
+
               {/* Pasport orqa tomoni */}
-              {(form as Record<string, any>).passport_image_second && (
-                <div 
-                  className="group relative bg-gray-50 dark:bg-slate-700/30 rounded-xl overflow-hidden border border-gray-100 dark:border-slate-700 cursor-pointer hover:shadow-md transition-all duration-300"
-                  onClick={() => setSelectedImage((form as Record<string, any>).passport_image_second)}
+              {form.passport_image_second && (
+                <div
+                  className="group relative bg-surface-50 dark:bg-surface-800/30 rounded-xl overflow-hidden border border-surface-100 dark:border-surface-800 cursor-pointer shadow-sm hover:shadow-md transition-all duration-300"
+                  onClick={() => setSelectedImage(form.passport_image_second ?? null)}
                 >
-                  <div className="aspect-[3/4] sm:aspect-video bg-gray-100 dark:bg-slate-900 flex items-center justify-center relative overflow-hidden">
+                  <div className="aspect-[3/4] sm:aspect-video bg-surface-100 dark:bg-surface-900 flex items-center justify-center relative overflow-hidden">
                     <img
-                      src={(form as Record<string, any>).passport_image_second}
+                      src={form.passport_image_second}
                       alt="Pasport orqa tomoni"
                       className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
                     />
@@ -982,31 +979,31 @@ const StudentProfile: React.FC = () => {
                        <Eye className="text-white w-6 h-6 sm:w-8 sm:h-8" />
                     </div>
                   </div>
-                  <div className="p-2 sm:p-3 bg-white dark:bg-slate-800 text-center border-t border-gray-50 dark:border-slate-700">
-                    <div className="text-[10px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate">Pasport (orqa)</div>
+                  <div className="p-2 sm:p-3 bg-white dark:bg-surface-900 text-center border-t border-surface-50 dark:border-surface-800">
+                    <div className="text-[10px] sm:text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider truncate">Pasport (orqa)</div>
                   </div>
                 </div>
               )}
-              
+
               {/* Qo'shimcha hujjat - Fayl ko'rinishida */}
-              {(form as Record<string, any>).document && (
-                <a 
-                  href={(form as Record<string, any>).document}
+              {form.document && (
+                <a
+                  href={form.document}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group relative bg-gray-50 dark:bg-slate-700/30 rounded-xl overflow-hidden border border-gray-100 dark:border-slate-700 cursor-pointer hover:shadow-md transition-all duration-300 flex flex-col"
+                  className="group relative bg-surface-50 dark:bg-surface-800/30 rounded-xl overflow-hidden border border-surface-100 dark:border-surface-800 cursor-pointer shadow-sm hover:shadow-md transition-all duration-300 flex flex-col"
                 >
-                  <div className="aspect-[3/4] sm:aspect-video bg-gray-100 dark:bg-slate-900 flex items-center justify-center relative overflow-hidden">
+                  <div className="aspect-[3/4] sm:aspect-video bg-surface-100 dark:bg-surface-900 flex items-center justify-center relative overflow-hidden">
                     <div className="flex flex-col items-center gap-3">
-                      <FileText className="w-16 h-16 text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
-                      <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Hujjatni ochish</span>
+                      <FileText className="w-16 h-16 text-surface-400 dark:text-surface-500 group-hover:text-brand-500 dark:group-hover:text-brand-400 transition-colors duration-150" />
+                      <span className="text-xs text-surface-500 dark:text-surface-400 font-medium">Hujjatni ochish</span>
                     </div>
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                        <Eye className="text-white w-6 h-6 sm:w-8 sm:h-8" />
                     </div>
                   </div>
-                  <div className="p-2 sm:p-3 bg-white dark:bg-slate-800 text-center border-t border-gray-50 dark:border-slate-700">
-                    <div className="text-[10px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate">Qo'shimcha hujjat</div>
+                  <div className="p-2 sm:p-3 bg-white dark:bg-surface-900 text-center border-t border-surface-50 dark:border-surface-800">
+                    <div className="text-[10px] sm:text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider truncate">Qo'shimcha hujjat</div>
                   </div>
                 </a>
               )}
@@ -1015,29 +1012,29 @@ const StudentProfile: React.FC = () => {
         )}
 
         {/* To'lovlar tarixi */}
-        {!editMode && form && (form as any).payments && (form as any).payments.length > 0 && (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-slate-700 mt-6 w-full">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">To'lovlar tarixi</h2>
-            
+        {!editMode && form && form.payments && form.payments.length > 0 && (
+          <div className="bg-white dark:bg-surface-900 rounded-2xl shadow-sm p-6 border border-surface-200 dark:border-surface-800 mt-6 w-full">
+            <h2 className="text-xl font-bold text-surface-900 dark:text-white mb-6">To'lovlar tarixi</h2>
+
             {/* Summary Cards */}
-            {(form as any).payment_summary && (
+            {form.payment_summary && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Jami to'langan</p>
-                    <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                      {formatCurrency((form as any).payment_summary.total_amount)}
+                 <div className="bg-brand-50 dark:bg-brand-900/20 p-4 rounded-2xl border border-brand-100 dark:border-brand-800">
+                    <p className="text-sm text-surface-500 dark:text-surface-400">Jami to'langan</p>
+                    <p className="text-lg font-bold text-brand-600 dark:text-brand-400">
+                      {formatCurrency(form.payment_summary.total_amount)}
                     </p>
                  </div>
-                 <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-100 dark:border-green-800">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Tasdiqlangan to'lovlar</p>
-                    <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                      {(form as any).payment_summary.approved_payments} ta
+                 <div className="bg-success-50 dark:bg-success-900/20 p-4 rounded-2xl border border-success-100 dark:border-success-800">
+                    <p className="text-sm text-surface-500 dark:text-surface-400">Tasdiqlangan to'lovlar</p>
+                    <p className="text-lg font-bold text-success-600 dark:text-success-400">
+                      {form.payment_summary.approved_payments} ta
                     </p>
                  </div>
-                 <div className={`p-4 rounded-lg border ${(form as any).payment_summary.is_debtor ? 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800' : 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800'}`}>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Holati</p>
-                    <p className={`text-lg font-bold ${(form as any).payment_summary.is_debtor ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                      {(form as any).payment_summary.is_debtor ? 'Qarzdor' : 'To\'lov qilingan'}
+                 <div className={`p-4 rounded-2xl border ${form.payment_summary.is_debtor ? 'bg-danger-50 dark:bg-danger-900/20 border-danger-100 dark:border-danger-800' : 'bg-success-50 dark:bg-success-900/20 border-success-100 dark:border-success-800'}`}>
+                    <p className="text-sm text-surface-500 dark:text-surface-400">Holati</p>
+                    <p className={`text-lg font-bold ${form.payment_summary.is_debtor ? 'text-danger-600 dark:text-danger-400' : 'text-success-600 dark:text-success-400'}`}>
+                      {form.payment_summary.is_debtor ? 'Qarzdor' : 'To\'lov qilingan'}
                     </p>
                  </div>
               </div>
@@ -1047,35 +1044,35 @@ const StudentProfile: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Sana</th>
-                    <th className="py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Summa</th>
-                    <th className="py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Usul</th>
-                    <th className="py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Holat</th>
+                  <tr className="border-b border-surface-200 dark:border-surface-700">
+                    <th className="py-3 px-4 text-sm font-medium text-surface-500 dark:text-surface-400">Sana</th>
+                    <th className="py-3 px-4 text-sm font-medium text-surface-500 dark:text-surface-400">Summa</th>
+                    <th className="py-3 px-4 text-sm font-medium text-surface-500 dark:text-surface-400">Usul</th>
+                    <th className="py-3 px-4 text-sm font-medium text-surface-500 dark:text-surface-400">Holat</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(form as any).payments.map((payment: any) => (
-                    <tr key={payment.id} className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                      <td className="py-3 px-4 text-gray-900 dark:text-white">
+                  {form.payments.map((payment: Payment) => (
+                    <tr key={payment.id} className="border-b border-surface-100 dark:border-surface-700/50 hover:bg-surface-50 dark:hover:bg-surface-800/30 transition-colors duration-150">
+                      <td className="py-3 px-4 text-surface-900 dark:text-white">
                         {formatDate(payment.paid_date)}
                       </td>
-                      <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">
+                      <td className="py-3 px-4 font-medium text-surface-900 dark:text-white">
                         {formatCurrency(payment.amount)}
                       </td>
-                      <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
+                      <td className="py-3 px-4 text-surface-700 dark:text-surface-300">
                         {payment.method || '-'}
                       </td>
                       <td className="py-3 px-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          payment.status === 'APPROVED' 
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                          payment.status === 'APPROVED'
+                            ? 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400'
                             : payment.status === 'REJECTED'
-                            ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                            : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                            ? 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400'
+                            : 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400'
                         }`}>
-                          {payment.status === 'APPROVED' ? 'Tasdiqlangan' : 
-                           payment.status === 'REJECTED' ? 'Rad etilgan' : 
+                          {payment.status === 'APPROVED' ? 'Tasdiqlangan' :
+                           payment.status === 'REJECTED' ? 'Rad etilgan' :
                            payment.status === 'PENDING' ? 'Kutilmoqda' : payment.status}
                         </span>
                       </td>
@@ -1090,21 +1087,21 @@ const StudentProfile: React.FC = () => {
 
       {/* Rasm modal */}
       {selectedImage && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
           onClick={() => setSelectedImage(null)}
         >
           <div className="relative max-w-5xl max-h-[90vh] w-full">
             <button
               onClick={() => setSelectedImage(null)}
-              className="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors"
+              className="absolute -top-10 right-0 text-white hover:text-surface-300 transition-colors duration-150"
             >
               <span className="text-4xl font-light">×</span>
             </button>
             <img
               src={selectedImage}
               alt="Katta rasm"
-              className="w-full h-full object-contain rounded-lg"
+              className="w-full h-full object-contain rounded-xl"
               onClick={(e) => e.stopPropagation()}
             />
           </div>
@@ -1114,22 +1111,22 @@ const StudentProfile: React.FC = () => {
       {/* O'chirish modali */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-200 dark:border-slate-700">
+          <div className="bg-white dark:bg-surface-900 rounded-2xl shadow-sm w-full max-w-md p-6 border border-surface-200 dark:border-surface-800">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+              <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-full flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-danger-600 dark:text-danger-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Talabani o'chirish</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Bu amalni bekor qilib bo'lmaydi</p>
+                <h3 className="text-lg font-semibold text-surface-900 dark:text-white">Talabani o'chirish</h3>
+                <p className="text-sm text-surface-500 dark:text-surface-400">Bu amalni bekor qilib bo'lmaydi</p>
               </div>
             </div>
 
             <div className="mb-6">
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-surface-700 dark:text-surface-300">
                 Rostdan ham <strong>{student?.name} {student?.last_name}</strong> nomli talabani o'chirmoqchimisiz?
               </p>
-              <p className="text-sm text-red-600 dark:text-red-400 mt-2">
+              <p className="text-sm text-danger-600 dark:text-danger-400 mt-2">
                 Bu amal qaytarilmaydi va barcha ma'lumotlar yo'qoladi.
               </p>
             </div>
@@ -1138,14 +1135,14 @@ const StudentProfile: React.FC = () => {
               <button
                 onClick={() => setShowDeleteModal(false)}
                 disabled={deleting}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg transition-colors"
+                className="px-4 py-2 text-surface-700 dark:text-surface-300 bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 rounded-xl transition-colors duration-150"
               >
                 Bekor qilish
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-4 py-2 bg-danger-600 hover:bg-danger-700 text-white rounded-xl transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {deleting ? (
                   <>
@@ -1167,4 +1164,4 @@ const StudentProfile: React.FC = () => {
   );
 };
 
-export default StudentProfile; 
+export default StudentProfile;

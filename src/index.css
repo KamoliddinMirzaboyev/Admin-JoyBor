@@ -1,18 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: 'cv11';
+}
+
+/* Standart fokus halqasi — brend rangida, migratsiya qilinmagan joylarda ham ishlaydi */
+:focus-visible {
+  outline: 2px solid theme('colors.brand.500');
+  outline-offset: 2px;
+}
 
 /* NProgress Custom Styles */
 /* NProgress bilan bog'liq barcha style o'chirildi */
 
 /* Dark mode support */
 .dark #nprogress .bar {
-  background: #60a5fa;
+  background: #2dd4bf;
 }
 
 .dark #nprogress .peg {
-  box-shadow: 0 0 10px #60a5fa, 0 0 5px #60a5fa;
-  background-color: #0072c3;
+  box-shadow: 0 0 10px #2dd4bf, 0 0 5px #2dd4bf;
+  background-color: #0d9488;
 }
 
 /* Custom Scrollbar Styles */
@@ -22,13 +35,13 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d1d5db; /* Tailwind gray-300 */
+  background: #cbd5e1; /* slate-300 */
   border-radius: 6px;
   transition: background 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af; /* Tailwind gray-400 */
+  background: #94a3b8; /* slate-400 */
 }
 
 ::-webkit-scrollbar-track {
@@ -37,142 +50,59 @@
 
 /* Dark mode scrollbar */
 .dark ::-webkit-scrollbar-thumb {
-  background: #4b5563; /* Tailwind gray-600 */
+  background: #475569; /* slate-600 */
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #6b7280; /* Tailwind gray-500 */
+  background: #64748b; /* slate-500 */
 }
 
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #d1d5db transparent;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 .dark * {
-  scrollbar-color: #4b5563 transparent;
+  scrollbar-color: #475569 transparent;
 }
 
 /* React Datepicker Dark Mode Customization */
 .dark .react-datepicker__triangle {
-  border-bottom-color: #1f2937 !important;
+  border-bottom-color: #1e293b !important;
 }
 .dark .react-datepicker__header {
-  background-color: #1f2937 !important;
-  border-bottom: 1px solid #374151 !important;
+  background-color: #1e293b !important;
+  border-bottom: 1px solid #334155 !important;
 }
 .dark .react-datepicker__current-month,
 .dark .react-datepicker-time__header,
 .dark .react-datepicker-year-header {
-  color: #f3f4f6 !important;
+  color: #f1f5f9 !important;
 }
 .dark .react-datepicker__day,
 .dark .react-datepicker__day-name {
-  color: #e5e7eb !important;
+  color: #e2e8f0 !important;
 }
 .dark .react-datepicker__day--selected,
 .dark .react-datepicker__day--keyboard-selected {
-  background-color: #2563eb !important;
+  background-color: #0d9488 !important;
   color: #fff !important;
 }
 .dark .react-datepicker__day--today {
   border-radius: 0.375rem !important;
-  background: #374151 !important;
+  background: #334155 !important;
   color: #fff !important;
 }
 .dark .react-datepicker__day:hover {
-  background: #2563eb !important;
+  background: #0d9488 !important;
   color: #fff !important;
 }
 .dark .react-datepicker__month-container {
-  background: #1f2937 !important;
+  background: #1e293b !important;
   border-radius: 0.75rem !important;
-  border: 1px solid #374151 !important;
+  border: 1px solid #334155 !important;
 }
 .dark .react-datepicker__navigation-icon::before {
-  border-color: #e5e7eb !important;
-}
-
-/* Fix MUI DatePicker end icon color for dark mode */
-.MuiInputAdornment-root .MuiSvgIcon-root {
-  color: #111827; /* black for light mode */
-}
-.dark .MuiInputAdornment-root .MuiSvgIcon-root {
-  color: #fff !important; /* white for dark mode */
-}
-
-/* MUI DatePicker popper and calendar theme improvements */
-.MuiPickersPopper-root .MuiPaper-root {
-  background-color: #fff;
-  color: #111827;
-  border-radius: 0.75rem;
-  border: 1px solid #d1d5db;
-  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.18);
-}
-.dark .MuiPickersPopper-root .MuiPaper-root {
-  background-color: #1f2937 !important;
-  color: #fff !important;
-  border: 1px solid #374151 !important;
-}
-
-.MuiPickersDay-root {
-  font-size: 1rem;
-  border-radius: 0.5rem;
-  color: #111827;
-  background: none;
-}
-.dark .MuiPickersDay-root {
-  color: #e5e7eb;
-}
-.MuiPickersDay-root.Mui-selected {
-  background-color: #2563eb !important;
-  color: #fff !important;
-}
-.dark .MuiPickersDay-root.Mui-selected {
-  background-color: #2563eb !important;
-  color: #fff !important;
-}
-.MuiPickersDay-root:focus {
-  outline: 2px solid #2563eb;
-}
-.MuiPickersDay-root:hover {
-  background-color: #2563eb22;
-}
-.dark .MuiPickersDay-root:hover {
-  background-color: #2563eb44;
-}
-.MuiPickersCalendarHeader-label {
-  font-weight: 600;
-  font-size: 1rem;
-  color: #111827;
-}
-.dark .MuiPickersCalendarHeader-label {
-  color: #fff;
-}
-.MuiPickersArrowSwitcher-root button {
-  color: #2563eb;
-}
-.dark .MuiPickersArrowSwitcher-root button {
-  color: #60a5fa;
-}
-.MuiPickersCalendarHeader-switchViewButton {
-  color: #2563eb;
-}
-.dark .MuiPickersCalendarHeader-switchViewButton {
-  color: #60a5fa;
-}
-.MuiPickersYear-yearButton {
-  color: #111827;
-}
-.dark .MuiPickersYear-yearButton {
-  color: #fff;
-}
-.MuiPickersYear-yearButton.Mui-selected {
-  background-color: #2563eb !important;
-  color: #fff !important;
-}
-.dark .MuiPickersYear-yearButton.Mui-selected {
-  background-color: #2563eb !important;
-  color: #fff !important;
+  border-color: #e2e8f0 !important;
 }

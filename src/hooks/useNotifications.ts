@@ -16,6 +16,7 @@ export const useNotifications = () => {
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const prevUnreadCount = useRef<number>(0);
+  const primed = useRef(false);
 
   // Initialize audio
   useEffect(() => {
@@ -35,10 +36,15 @@ export const useNotifications = () => {
   const unreadNotifications = notifications.filter(n => !n.is_read);
   const unreadCount = unreadNotifications.length;
 
-  // Play sound when unread count increases
+  // Play sound when unread count increases (skip first fetch baseline)
   useEffect(() => {
+    if (!primed.current) {
+      prevUnreadCount.current = unreadCount;
+      primed.current = true;
+      return;
+    }
     if (unreadCount > prevUnreadCount.current) {
-      audioRef.current?.play().catch(err => console.error('Audio play error:', err));
+      audioRef.current?.play().catch(() => {});
       
       // Optional: Show toast for new notification if it's just one
       if (unreadCount - prevUnreadCount.current === 1) {

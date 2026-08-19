@@ -23,7 +23,7 @@ const Layout: React.FC = () => {
   }, [location, navigationType]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div className="min-h-screen bg-surface-50 dark:bg-surface-900 transition-colors duration-300">
       <Sidebar />
 
       <main

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import DataTable from "../components/UI/DataTable";
-import { CreditCard, Plus, X, Wallet, Eye, Edit, Clock, CheckCircle, AlertCircle, ZoomIn } from "lucide-react";
+import { CreditCard, Plus, X, Wallet } from "lucide-react";
 import Select from "react-select";
 import { motion, AnimatePresence } from "framer-motion";
 import "../index.css";
@@ -8,41 +7,12 @@ import { toast } from "sonner";
 import { useLocation, Link } from "react-router-dom";
 import { formatCurrency, formatCurrencyDetailed } from "../utils/formatters";
 import { usePayments, useStudents, useCreatePayment, useUpdatePayment } from "../hooks/api/useApi";
-import { link as apiBaseUrl } from "../data/config";
-
-// Type definitions
-interface Student extends Record<string, unknown> {
-  id: number;
-  name: string;
-  last_name: string;
-}
-
-interface StudentInfo extends Record<string, unknown> {
-  id: number;
-  name: string;
-  last_name: string;
-  middle_name?: string;
-  faculty?: string;
-  direction?: string;
-  passport?: string;
-  group?: string;
-  course?: string;
-  gender?: string;
-  phone?: string;
-  picture?: string;
-}
-
-interface Payment extends Record<string, unknown> {
-  id: number;
-  student?: Student;
-  student_info?: StudentInfo;
-  amount: number;
-  paid_date: string;
-  valid_until: string;
-  method: "Cash" | "Card";
-  status: string;
-  comment?: string;
-}
+import { api } from "../data/api";
+import { useAppStore } from "../stores/useAppStore";
+import Skeleton from "../components/UI/Skeleton";
+import PaymentsFilters, { type PaymentMethodFilter, type DateRangeFilter, type AmountRangeFilter } from "../components/payments/PaymentsFilters";
+import PaymentsTable from "../components/payments/PaymentsTable";
+import type { Student, Payment } from "../components/payments/types";
 
 const Payments: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
@@ -59,26 +29,16 @@ const Payments: React.FC = () => {
   const location = useLocation();
 
   // Filter states
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState("");
-  const [dateRangeFilter, setDateRangeFilter] = useState("");
-  const [amountRangeFilter, setAmountRangeFilter] = useState("");
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<PaymentMethodFilter>("");
+  const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>("");
+  const [amountRangeFilter, setAmountRangeFilter] = useState<AmountRangeFilter>("");
 
-  // Dark mode holatini kuzatish
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  useEffect(() => {
-    const checkDarkMode = () => {
-      setIsDarkMode(document.documentElement.classList.contains('dark'));
-    };
-    checkDarkMode();
-    const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
+  const isDarkMode = useAppStore((state) => state.isDark);
 
   // Fetch payments and students using custom hooks with caching
   const { data: paymentsData, isLoading: paymentsLoading, error: fetchError, refetch } = usePayments();
   const { data: studentsData, isLoading: studentsLoading } = useStudents({ is_active: true });
-  
+
   const createPaymentMutation = useCreatePayment();
   const updatePaymentMutation = useUpdatePayment();
 
@@ -110,80 +70,6 @@ const Payments: React.FC = () => {
       window.removeEventListener('student-updated', handleUpdate);
     };
   }, [refetch]);
-
-  const columns = [
-    {
-      key: "student",
-      title: "Talaba",
-      render: (_: unknown, row: Record<string, unknown>): React.ReactNode => {
-        if (row.student_info && typeof row.student_info === "object") {
-          const studentInfo = row.student_info as { id: number; name?: string; last_name?: string };
-          const fullName = [studentInfo.last_name, studentInfo.name].filter(Boolean).join(' ');
-          return (
-            <Link to={`/studentprofile/${studentInfo.id}`} className="font-medium text-blue-600 hover:underline dark:text-blue-400">
-              {fullName || "-"}
-            </Link>
-          );
-        }
-        if (row.student && typeof row.student === "object") {
-          const student = row.student as { id: number; name?: string; last_name?: string };
-          const fullName = [student.last_name, student.name].filter(Boolean).join(' ');
-          return (
-            <Link to={`/studentprofile/${student.id}`} className="font-medium text-blue-600 hover:underline dark:text-blue-400">
-              {fullName || "-"}
-            </Link>
-          );
-        }
-        return "-";
-      },
-      sortable: true,
-    },
-    {
-      key: "amount",
-      title: "Miqdor",
-      render: (amount: unknown): React.ReactNode => {
-        return typeof amount === "number" ? formatCurrency(amount) : "-";
-      },
-      sortable: true,
-    },
-    {
-      key: "paid_date",
-      title: "To'lov sanasi",
-      render: (date: unknown): React.ReactNode => {
-        return typeof date === "string" && date ? new Date(date).toLocaleDateString("uz-UZ") : "-";
-      },
-      sortable: true,
-    },
-    {
-      key: "method",
-      title: "To'lov turi",
-      render: (method: unknown): React.ReactNode => {
-        if (typeof method === "string") {
-          return method.toLowerCase() === "cash" ? "Naqd" : method.toLowerCase() === "card" ? "Karta orqali" : method;
-        }
-        return "-";
-      },
-      sortable: true,
-    },
-    {
-      key: "actions",
-      title: "Amallar",
-      render: (_: unknown, row: Record<string, unknown>): React.ReactNode => {
-        const payment = row as Payment;
-        return (
-          <div className="flex items-center gap-2">
-            <button onClick={() => handleView(payment)} className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Ko'rish">
-              <Eye className="w-4 h-4" />
-            </button>
-            <button onClick={() => handleEdit(payment)} className="p-2 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-lg transition-colors" title="Tahrirlash">
-              <Edit className="w-4 h-4" />
-            </button>
-          </div>
-        );
-      },
-      sortable: false,
-    },
-  ];
 
   const handleOpen = () => {
     setIsEditMode(false);
@@ -264,13 +150,14 @@ const Payments: React.FC = () => {
       return;
     }
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       student: Number(form.studentId),
       amount: Number(form.amount),
       method: form.paymentType === "cash" ? "Cash" : "Card",
       comment: form.comment || "",
-      status: "APPROVED"
+      status: "APPROVED",
     };
+    if (form.validUntil) payload.valid_until = form.validUntil;
 
     if (isEditMode && selectedPayment) {
       updatePaymentMutation.mutate({ id: selectedPayment.id, data: payload }, {
@@ -374,28 +261,22 @@ const Payments: React.FC = () => {
     });
   }, [payments, paymentMethodFilter, dateRangeFilter, amountRangeFilter]);
 
+  const hasActiveFilters = Boolean(paymentMethodFilter || dateRangeFilter || amountRangeFilter);
+
+  const handleClearFilters = useCallback(() => {
+    setPaymentMethodFilter("");
+    setDateRangeFilter("");
+    setAmountRangeFilter("");
+  }, []);
+
   // Export handler for DataTable
   const handleExportPayments = useCallback(async () => {
     try {
-      const token = sessionStorage.getItem("access");
-      if (!token) {
-        toast.error("Avtorizatsiya talab qilinadi!");
-        return;
-      }
-
       toast.info("Export boshlanmoqda...");
 
-      const response = await fetch(`${apiBaseUrl}/export-payment/`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/json",
-        },
-      });
+      const response = await api.exportPayments();
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Export error:", errorText);
         toast.error(`Export xatolik: ${response.status} ${response.statusText}`);
         return;
       }
@@ -411,37 +292,36 @@ const Payments: React.FC = () => {
       window.URL.revokeObjectURL(url);
       toast.success("To'lovlar ro'yxati muvaffaqiyatli yuklandi!");
     } catch (error) {
-      console.error("Export error:", error);
       toast.error("Export xatolik yuz berdi!");
     }
   }, []);
 
-  // React Select uchun dinamik styles
+  // React Select uchun dinamik styles (talaba tanlash formasi uchun)
   const selectStyles = useMemo(() => ({
     control: (base: Record<string, unknown>, state: { isFocused: boolean }) => ({
       ...base,
-      backgroundColor: isDarkMode ? "#1f2937" : "#fff",
-      color: isDarkMode ? "#fff" : "#111827",
+      backgroundColor: isDarkMode ? "#1e293b" : "#fff",
+      color: isDarkMode ? "#fff" : "#0f172a",
       borderColor: state.isFocused
-        ? (isDarkMode ? "#60a5fa" : "#3b82f6")
-        : (isDarkMode ? "#374151" : "#d1d5db"),
+        ? (isDarkMode ? "#2dd4bf" : "#14b8a6")
+        : (isDarkMode ? "#334155" : "#cbd5e1"),
       boxShadow: state.isFocused
-        ? `0 0 0 2px ${isDarkMode ? "rgba(96, 165, 250, 0.3)" : "rgba(59, 130, 246, 0.3)"}`
+        ? `0 0 0 2px ${isDarkMode ? "rgba(45, 212, 191, 0.3)" : "rgba(20, 184, 166, 0.3)"}`
         : "none",
       minHeight: 42,
       fontSize: 14,
-      borderRadius: 8,
-      transition: "all 0.2s ease",
+      borderRadius: 12,
+      transition: "all 0.15s ease",
       '&:hover': {
-        borderColor: isDarkMode ? "#4b5563" : "#9ca3af"
+        borderColor: isDarkMode ? "#475569" : "#94a3b8"
       }
     }),
     menu: (base: Record<string, unknown>) => ({
       ...base,
-      backgroundColor: isDarkMode ? "#1f2937" : "#fff",
-      color: isDarkMode ? "#fff" : "#111827",
-      borderRadius: 8,
-      border: `1px solid ${isDarkMode ? "#374151" : "#d1d5db"}`,
+      backgroundColor: isDarkMode ? "#1e293b" : "#fff",
+      color: isDarkMode ? "#fff" : "#0f172a",
+      borderRadius: 12,
+      border: `1px solid ${isDarkMode ? "#334155" : "#cbd5e1"}`,
       boxShadow: isDarkMode
         ? "0 10px 25px rgba(0, 0, 0, 0.3)"
         : "0 10px 25px rgba(0, 0, 0, 0.1)",
@@ -453,63 +333,62 @@ const Payments: React.FC = () => {
     }),
     singleValue: (base: Record<string, unknown>) => ({
       ...base,
-      color: isDarkMode ? "#fff" : "#111827",
+      color: isDarkMode ? "#fff" : "#0f172a",
     }),
     input: (base: Record<string, unknown>) => ({
       ...base,
-      color: isDarkMode ? "#fff" : "#111827",
+      color: isDarkMode ? "#fff" : "#0f172a",
     }),
     placeholder: (base: Record<string, unknown>) => ({
       ...base,
-      color: isDarkMode ? "#9ca3af" : "#6b7280",
+      color: isDarkMode ? "#94a3b8" : "#64748b",
     }),
     option: (base: Record<string, unknown>, state: { isSelected: boolean; isFocused: boolean }) => ({
       ...base,
       backgroundColor: state.isSelected
-        ? (isDarkMode ? "#2563eb" : "#3b82f6")
+        ? (isDarkMode ? "#0d9488" : "#14b8a6")
         : state.isFocused
-          ? (isDarkMode ? "#374151" : "#f3f4f6")
+          ? (isDarkMode ? "#334155" : "#f1f5f9")
           : "transparent",
       color: state.isSelected
         ? "#fff"
-        : (isDarkMode ? "#e5e7eb" : "#111827"),
+        : (isDarkMode ? "#e2e8f0" : "#0f172a"),
       cursor: "pointer",
-      borderRadius: 6,
+      borderRadius: 8,
       margin: "2px 0",
       padding: "8px 12px",
       transition: "all 0.15s ease",
-      '&:active': {
-        backgroundColor: isDarkMode ? "#1d4ed8" : "#2563eb"
-      }
     }),
     indicatorSeparator: () => ({ display: 'none' }),
     dropdownIndicator: (base: Record<string, unknown>) => ({
       ...base,
-      color: isDarkMode ? "#9ca3af" : "#6b7280",
+      color: isDarkMode ? "#94a3b8" : "#64748b",
       '&:hover': {
-        color: isDarkMode ? "#60a5fa" : "#3b82f6"
+        color: isDarkMode ? "#2dd4bf" : "#14b8a6"
       }
     }),
     clearIndicator: (base: Record<string, unknown>) => ({
       ...base,
-      color: isDarkMode ? "#9ca3af" : "#6b7280",
+      color: isDarkMode ? "#94a3b8" : "#64748b",
       '&:hover': {
-        color: isDarkMode ? "#ef4444" : "#dc2626"
+        color: isDarkMode ? "#fb7185" : "#e11d48"
       }
     })
   }), [isDarkMode]);
 
   if (isLoading && payments.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-solid"></div>
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8 space-y-6">
+        <Skeleton className="h-9 w-64" />
+        <Skeleton className="h-16 w-full rounded-2xl" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
       </div>
     );
   }
 
   if (fetchError) {
     return (
-      <div className="text-center py-10 text-red-600 dark:text-red-400">
+      <div className="text-center py-10 text-danger-600 dark:text-danger-400">
         Ma'lumotlarni yuklashda xatolik yuz berdi.
       </div>
     );
@@ -518,19 +397,19 @@ const Payments: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8">
       <div className="flex flex-col sm:flex-row sm:items-center mb-6 gap-3 sm:gap-3">
-        <div className="w-10 h-10 bg-gradient-to-br from-accent-500 to-primary-500 rounded-lg flex items-center justify-center mb-2 sm:mb-0">
+        <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center mb-2 sm:mb-0">
           <CreditCard className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">To'lovlar</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">
+          <h1 className="text-xl sm:text-3xl font-bold text-surface-900 dark:text-white">To'lovlar</h1>
+          <p className="text-surface-600 dark:text-surface-400 mt-1 text-sm sm:text-base">
             Yotoqxona to'lovlari boshqaruvi
           </p>
         </div>
         <div className="sm:ml-auto">
           <button
             onClick={handleOpen}
-            className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm"
+            className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition-colors duration-150 text-xs sm:text-sm"
           >
             <Plus className="w-4 h-4" />
             <span>To'lov qo'shish</span>
@@ -538,106 +417,23 @@ const Payments: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filterlar:</span>
-        </div>
+      <PaymentsFilters
+        paymentMethodFilter={paymentMethodFilter}
+        dateRangeFilter={dateRangeFilter}
+        amountRangeFilter={amountRangeFilter}
+        onPaymentMethodChange={setPaymentMethodFilter}
+        onDateRangeChange={setDateRangeFilter}
+        onAmountRangeChange={setAmountRangeFilter}
+        onClear={handleClearFilters}
+        filteredCount={filteredPayments.length}
+        totalCount={payments.length}
+      />
 
-        <div className="flex flex-wrap gap-3">
-          {/* Payment method filter */}
-          <div className="min-w-[150px]">
-            <Select
-              options={[
-                { value: "cash", label: "Naqd" },
-                { value: "card", label: "Karta orqali" },
-              ]}
-              value={paymentMethodFilter ? {
-                value: paymentMethodFilter, label:
-                  paymentMethodFilter === "cash" ? "Naqd" : "Karta orqali"
-              } : null}
-              onChange={(opt) => setPaymentMethodFilter(opt ? opt.value : "")}
-              isClearable
-              placeholder="To'lov turi"
-              styles={selectStyles}
-              classNamePrefix="react-select"
-            />
-          </div>
-
-          {/* Date range filter */}
-          <div className="min-w-[150px]">
-            <Select
-              options={[
-                { value: "today", label: "Bugun" },
-                { value: "week", label: "Bu hafta" },
-                { value: "month", label: "Bu oy" },
-                { value: "year", label: "Bu yil" },
-              ]}
-              value={dateRangeFilter ? {
-                value: dateRangeFilter, label:
-                  dateRangeFilter === "today" ? "Bugun" :
-                    dateRangeFilter === "week" ? "Bu hafta" :
-                      dateRangeFilter === "month" ? "Bu oy" : "Bu yil"
-              } : null}
-              onChange={(opt) => setDateRangeFilter(opt ? opt.value : "")}
-              isClearable
-              placeholder="Sana oralig'i"
-              styles={selectStyles}
-              classNamePrefix="react-select"
-            />
-          </div>
-
-          {/* Amount range filter */}
-          <div className="min-w-[150px]">
-            <Select
-              options={[
-                { value: "low", label: "1M gacha" },
-                { value: "medium", label: "1M - 5M" },
-                { value: "high", label: "5M dan yuqori" },
-              ]}
-              value={amountRangeFilter ? {
-                value: amountRangeFilter, label:
-                  amountRangeFilter === "low" ? "1M gacha" :
-                    amountRangeFilter === "medium" ? "1M - 5M" : "5M dan yuqori"
-              } : null}
-              onChange={(opt) => setAmountRangeFilter(opt ? opt.value : "")}
-              isClearable
-              placeholder="Summa oralig'i"
-              styles={selectStyles}
-              classNamePrefix="react-select"
-            />
-          </div>
-
-          {/* Clear all filters button */}
-          {(paymentMethodFilter || dateRangeFilter || amountRangeFilter) && (
-            <button
-              onClick={() => {
-                setPaymentMethodFilter("");
-                setDateRangeFilter("");
-                setAmountRangeFilter("");
-              }}
-              className="px-3 py-2 text-xs font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-            >
-              Filterlarni tozalash
-            </button>
-          )}
-        </div>
-
-        {/* Filter results info */}
-        {(paymentMethodFilter || dateRangeFilter || amountRangeFilter) && (
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            {filteredPayments.length} ta to'lov topildi ({payments.length} tadan)
-          </div>
-        )}
-      </div>
-
-      <DataTable
-        data={filteredPayments}
-        columns={columns}
-        searchable={true}
-        filterable={true}
-        pagination={true}
-        pageSize={10}
+      <PaymentsTable
+        payments={filteredPayments}
+        hasActiveFilters={hasActiveFilters}
+        onView={handleView}
+        onEdit={handleEdit}
         onExport={handleExportPayments}
       />
 
@@ -657,22 +453,22 @@ const Payments: React.FC = () => {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 40, opacity: 0 }}
               transition={{ duration: 0.25, ease: "easeInOut" }}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8 w-full max-w-sm sm:max-w-md lg:max-w-lg relative flex flex-col gap-4 sm:gap-6 max-h-[95vh] overflow-y-auto"
+              className="bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-2xl shadow-sm p-4 sm:p-6 lg:p-8 w-full max-w-sm sm:max-w-md lg:max-w-lg relative flex flex-col gap-4 sm:gap-6 max-h-[95vh] overflow-y-auto"
               onClick={e => e.stopPropagation()}
             >
               <button
                 onClick={handleClose}
-                className="absolute top-2 sm:top-4 right-2 sm:right-4 text-gray-400 hover:text-red-500 dark:hover:text-red-400 bg-transparent rounded-full p-1 transition-colors"
+                className="absolute top-2 sm:top-4 right-2 sm:right-4 text-surface-400 hover:text-danger-500 dark:hover:text-danger-400 bg-transparent rounded-full p-1 transition-colors duration-150"
               >
                 <X className="w-6 h-6" />
               </button>
               <div className="text-center mb-4 sm:mb-6">
-                <h2 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-lg sm:text-2xl font-bold text-surface-900 dark:text-white">
                   {isEditMode ? "To'lovni tahrirlash" : "Yangi to'lov qo'shish"}
                 </h2>
                 {isEditMode && selectedPayment && (
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                    <div className="text-xs text-blue-600 dark:text-blue-400">
+                  <div className="text-sm text-surface-600 dark:text-surface-400 mt-2">
+                    <div className="text-xs text-brand-600 dark:text-brand-400">
                       Faqat summa, sana, to'lov turi va izohni o'zgartirishingiz mumkin
                     </div>
                   </div>
@@ -680,10 +476,10 @@ const Payments: React.FC = () => {
               </div>
               <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:gap-5 pb-6 sm:pb-8">
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">
+                  <label className="block text-sm font-medium mb-2 text-surface-900 dark:text-surface-200">
                     Talaba
                     {form.studentId && studentOptions.length > 0 && (
-                      <span className="text-xs text-green-600 dark:text-green-400 ml-2">✓</span>
+                      <span className="text-xs text-success-600 dark:text-success-400 ml-2">✓</span>
                     )}
                   </label>
                   <Select
@@ -701,7 +497,7 @@ const Payments: React.FC = () => {
                     loadingMessage={() => "Yuklanmoqda..."}
                   />
                   {isEditMode && (
-                    <div className="text-xs text-amber-600 dark:text-amber-400 mt-2 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div className="text-xs text-warning-600 dark:text-warning-400 mt-2 bg-warning-50 dark:bg-warning-900/20 p-3 rounded-xl border border-warning-200 dark:border-warning-800">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">⚠️ Eslatma:</span>
                       </div>
@@ -709,22 +505,22 @@ const Payments: React.FC = () => {
                     </div>
                   )}
                   {!isEditMode && studentOptions.length === 0 && !studentsLoading && (
-                    <div className="text-xs text-red-600 dark:text-red-400 mt-2 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                    <div className="text-xs text-danger-600 dark:text-danger-400 mt-2 bg-danger-50 dark:bg-danger-900/20 p-3 rounded-xl border border-danger-200 dark:border-danger-800">
                       Talabalar ro'yxati bo'sh yoki yuklanmadi. Iltimos, sahifani yangilang.
                     </div>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">
+                  <label className="block text-sm font-medium mb-2 text-surface-900 dark:text-surface-200">
                     To'lov miqdori (som)
                     {form.amount && (
-                      <span className="text-xs font-medium text-green-600 dark:text-green-400 ml-2">
+                      <span className="text-xs font-medium text-success-600 dark:text-success-400 ml-2">
                         = {formatCurrency(Number(form.amount))}
                       </span>
                     )}
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-300 pointer-events-none z-10">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 dark:text-surface-300 pointer-events-none z-10">
                       <span className="text-sm font-medium">UZS</span>
                     </span>
                     <input
@@ -732,14 +528,14 @@ const Payments: React.FC = () => {
                       name="amount"
                       value={formatNumber(form.amount)}
                       onChange={handleAmountChange}
-                      className="w-full pl-12 pr-3 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 text-right"
+                      className="w-full pl-12 pr-3 py-3 rounded-xl border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-900 dark:text-white placeholder-surface-400 dark:placeholder-surface-500 focus:ring-2 focus:ring-brand-500/40 focus:border-brand-600 transition-colors duration-150 text-right"
                       required
                       placeholder="1,200,000"
                       autoComplete="off"
                     />
                   </div>
                   {isEditMode && selectedPayment && form.amount && Number(form.amount) !== selectedPayment.amount && (
-                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-2 bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg">
+                    <div className="text-xs text-brand-600 dark:text-brand-400 mt-2 bg-brand-50 dark:bg-brand-900/20 p-2 rounded-xl">
                       <div className="flex items-center justify-between">
                         <span>Avvalgi:</span>
                         <span className="font-medium">{selectedPayment.amount ? formatCurrency(selectedPayment.amount) : '-'}</span>
@@ -750,23 +546,23 @@ const Payments: React.FC = () => {
                       </div>
                     </div>
                   )}
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <div className="text-xs text-surface-500 dark:text-surface-400 mt-1">
                     Minimal: 100,000 som • Maksimal: 100,000,000 som
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">
+                  <label className="block text-sm font-medium mb-2 text-surface-900 dark:text-surface-200">
                     To'lov turi
                     {isEditMode && selectedPayment?.method && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                      <span className="text-xs text-surface-500 dark:text-surface-400 ml-2">
                         (Avvalgi: {selectedPayment.method === "Cash" ? "Naqd" : "Karta orqali"})
                       </span>
                     )}
                   </label>
                   <div className="flex gap-4 mt-2">
-                    <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-colors cursor-pointer select-none shadow-sm focus-within:ring-2 focus-within:ring-primary-500 ${form.paymentType === "cash" ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30" : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"}`}>
-                      <Wallet className={`w-5 h-5 ${form.paymentType === "cash" ? "text-primary-600" : "text-gray-400 dark:text-gray-500"}`} />
+                    <label className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-colors duration-150 cursor-pointer select-none shadow-sm focus-within:ring-2 focus-within:ring-brand-500/40 ${form.paymentType === "cash" ? "border-brand-600 bg-brand-50 dark:bg-brand-900/30" : "border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800"}`}>
+                      <Wallet className={`w-5 h-5 ${form.paymentType === "cash" ? "text-brand-600" : "text-surface-400 dark:text-surface-500"}`} />
                       <input
                         type="radio"
                         name="paymentType"
@@ -775,10 +571,10 @@ const Payments: React.FC = () => {
                         onChange={handleChange}
                         className="hidden"
                       />
-                      <span className={`text-sm font-medium ${form.paymentType === "cash" ? "text-primary-700 dark:text-primary-300" : "text-gray-700 dark:text-gray-200"}`}>Naqd</span>
+                      <span className={`text-sm font-medium ${form.paymentType === "cash" ? "text-brand-700 dark:text-brand-300" : "text-surface-700 dark:text-surface-200"}`}>Naqd</span>
                     </label>
-                    <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-colors cursor-pointer select-none shadow-sm focus-within:ring-2 focus-within:ring-primary-500 ${form.paymentType === "card" ? "border-primary-600 bg-primary-50 dark:bg-primary-900/30" : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"}`}>
-                      <CreditCard className={`w-5 h-5 ${form.paymentType === "card" ? "text-primary-600" : "text-gray-400 dark:text-gray-500"}`} />
+                    <label className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-colors duration-150 cursor-pointer select-none shadow-sm focus-within:ring-2 focus-within:ring-brand-500/40 ${form.paymentType === "card" ? "border-brand-600 bg-brand-50 dark:bg-brand-900/30" : "border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800"}`}>
+                      <CreditCard className={`w-5 h-5 ${form.paymentType === "card" ? "text-brand-600" : "text-surface-400 dark:text-surface-500"}`} />
                       <input
                         type="radio"
                         name="paymentType"
@@ -787,17 +583,17 @@ const Payments: React.FC = () => {
                         onChange={handleChange}
                         className="hidden"
                       />
-                      <span className={`text-sm font-medium ${form.paymentType === "card" ? "text-primary-700 dark:text-primary-300" : "text-gray-700 dark:text-gray-200"}`}>Karta</span>
+                      <span className={`text-sm font-medium ${form.paymentType === "card" ? "text-brand-700 dark:text-brand-300" : "text-surface-700 dark:text-surface-200"}`}>Karta</span>
                     </label>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">Izoh</label>
+                  <label className="block text-sm font-medium mb-2 text-surface-900 dark:text-surface-200">Izoh</label>
                   <textarea
                     name="comment"
                     value={form.comment}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-900 dark:text-white placeholder-surface-400 dark:placeholder-surface-500 focus:ring-2 focus:ring-brand-500/40 focus:border-transparent"
                     rows={2}
                     placeholder="Izoh..."
                   />
@@ -806,14 +602,14 @@ const Payments: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="flex-1 py-3 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                    className="flex-1 py-3 rounded-xl bg-surface-200 dark:bg-surface-700 text-surface-700 dark:text-surface-200 font-semibold hover:bg-surface-300 dark:hover:bg-surface-600 transition-colors duration-150"
                     disabled={loading}
                   >
                     Bekor qilish
                   </button>
                   <button
                     type="submit"
-                    className="flex-2 py-3 px-6 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-semibold transition-colors shadow disabled:opacity-60"
+                    className="flex-2 py-3 px-6 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold transition-colors duration-150 shadow-sm disabled:opacity-60"
                     disabled={loading}
                   >
                     {loading ? (
@@ -850,13 +646,13 @@ const Payments: React.FC = () => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-lg relative border border-gray-200 dark:border-slate-700"
+              className="bg-white dark:bg-surface-900 rounded-2xl shadow-sm p-6 w-full max-w-lg relative border border-surface-200 dark:border-surface-800"
               onClick={e => e.stopPropagation()}
             >
               {/* Close button */}
               <button
                 onClick={() => setShowViewModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                className="absolute top-4 right-4 text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-colors duration-150"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -864,12 +660,12 @@ const Payments: React.FC = () => {
               {/* Header */}
               <div className="mb-6">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-gray-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
-                    <CreditCard className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  <div className="w-10 h-10 bg-surface-100 dark:bg-surface-800 rounded-xl flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-surface-600 dark:text-surface-400" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">To'lov ma'lumotlari</h2>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm">ID: #{payment.id}</p>
+                    <h2 className="text-xl font-bold text-surface-900 dark:text-white">To'lov ma'lumotlari</h2>
+                    <p className="text-surface-500 dark:text-surface-400 text-sm">ID: #{payment.id}</p>
                   </div>
                 </div>
               </div>
@@ -877,10 +673,10 @@ const Payments: React.FC = () => {
               {/* Content */}
               <div className="space-y-4">
                 {/* Student info */}
-                <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 border border-gray-200 dark:border-slate-600">
+                <div className="bg-surface-50 dark:bg-surface-800/50 rounded-xl p-4 border border-surface-200 dark:border-surface-700">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-200 dark:bg-slate-600 rounded-lg flex items-center justify-center">
-                      <span className="text-gray-700 dark:text-gray-300 font-semibold text-sm">
+                    <div className="w-10 h-10 bg-surface-200 dark:bg-surface-700 rounded-xl flex items-center justify-center">
+                      <span className="text-surface-700 dark:text-surface-300 font-semibold text-sm">
                         {payment.student_info
                           ? `${payment.student_info.name?.[0] || ""}${payment.student_info.last_name?.[0] || ""}`
                           : payment.student
@@ -889,10 +685,10 @@ const Payments: React.FC = () => {
                       </span>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Talaba</p>
+                      <p className="text-xs text-surface-500 dark:text-surface-400">Talaba</p>
                       <Link
                         to={`/studentprofile/${payment.student_info?.id || payment.student?.id || ''}`}
-                        className="font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                        className="font-semibold text-surface-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 transition-colors duration-150"
                       >
                         {payment.student_info
                           ? [payment.student_info.last_name, payment.student_info.name].filter(Boolean).join(' ')
@@ -905,31 +701,31 @@ const Payments: React.FC = () => {
                 </div>
 
                 {/* Amount */}
-                <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 border border-gray-200 dark:border-slate-600">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">To'lov miqdori</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <div className="bg-surface-50 dark:bg-surface-800/50 rounded-xl p-4 border border-surface-200 dark:border-surface-700">
+                  <p className="text-xs text-surface-500 dark:text-surface-400 mb-1">To'lov miqdori</p>
+                  <p className="text-2xl font-bold text-surface-900 dark:text-white">
                     {payment.amount ? formatCurrencyDetailed(payment.amount) : "-"}
                   </p>
                 </div>
 
                 {/* Details grid */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 border border-gray-200 dark:border-slate-600">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">To'lov sanasi</p>
-                    <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                  <div className="bg-surface-50 dark:bg-surface-800/50 rounded-xl p-4 border border-surface-200 dark:border-surface-700">
+                    <p className="text-xs text-surface-500 dark:text-surface-400 mb-1">To'lov sanasi</p>
+                    <p className="font-semibold text-surface-900 dark:text-white text-sm">
                       {payment.paid_date ? new Date(payment.paid_date).toLocaleDateString("uz-UZ") : "-"}
                     </p>
                   </div>
 
-                  <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 border border-gray-200 dark:border-slate-600">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">To'lov turi</p>
+                  <div className="bg-surface-50 dark:bg-surface-800/50 rounded-xl p-4 border border-surface-200 dark:border-surface-700">
+                    <p className="text-xs text-surface-500 dark:text-surface-400 mb-1">To'lov turi</p>
                     <div className="flex items-center gap-2">
                       {payment.method === "Cash" ? (
-                        <Wallet className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        <Wallet className="w-4 h-4 text-surface-600 dark:text-surface-400" />
                       ) : (
-                        <CreditCard className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        <CreditCard className="w-4 h-4 text-surface-600 dark:text-surface-400" />
                       )}
-                      <span className="font-semibold text-gray-900 dark:text-white text-sm">
+                      <span className="font-semibold text-surface-900 dark:text-white text-sm">
                         {payment.method === "Cash" ? "Naqd" : payment.method === "Card" ? "Karta orqali" : payment.method}
                       </span>
                     </div>
@@ -938,17 +734,17 @@ const Payments: React.FC = () => {
 
                 {/* Comment */}
                 {payment.comment && (
-                  <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 border border-gray-200 dark:border-slate-600">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Izoh</p>
-                    <p className="text-gray-900 dark:text-white text-sm">{payment.comment || '-'}</p>
+                  <div className="bg-surface-50 dark:bg-surface-800/50 rounded-xl p-4 border border-surface-200 dark:border-surface-700">
+                    <p className="text-xs text-surface-500 dark:text-surface-400 mb-2">Izoh</p>
+                    <p className="text-surface-900 dark:text-white text-sm">{payment.comment || '-'}</p>
                   </div>
                 )}
 
                 {/* Valid until */}
                 {payment.valid_until && (
-                  <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 border border-gray-200 dark:border-slate-600">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Amal qilish muddati</p>
-                    <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                  <div className="bg-surface-50 dark:bg-surface-800/50 rounded-xl p-4 border border-surface-200 dark:border-surface-700">
+                    <p className="text-xs text-surface-500 dark:text-surface-400 mb-1">Amal qilish muddati</p>
+                    <p className="font-semibold text-surface-900 dark:text-white text-sm">
                       {payment.valid_until ? new Date(payment.valid_until).toLocaleDateString("uz-UZ") : '-'}
                     </p>
                   </div>
@@ -956,10 +752,10 @@ const Payments: React.FC = () => {
               </div>
 
               {/* Footer */}
-              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-slate-600">
+              <div className="mt-6 pt-4 border-t border-surface-200 dark:border-surface-800">
                 <button
                   onClick={() => setShowViewModal(false)}
-                  className="w-full bg-gray-600 hover:bg-gray-700 dark:bg-slate-600 dark:hover:bg-slate-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors"
+                  className="w-full bg-surface-600 hover:bg-surface-700 dark:bg-surface-700 dark:hover:bg-surface-600 text-white font-semibold py-2.5 px-6 rounded-xl transition-colors duration-150"
                 >
                   Yopish
                 </button>

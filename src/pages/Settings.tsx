@@ -1,1418 +1,170 @@
-import React, { useState, useRef } from 'react';
-import { Edit, DollarSign, ListChecks, Wifi, BookOpen, WashingMachine, Tv, Coffee, Plus, Info, MapPin, User, School, FileImage, Phone, Send, Trash2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Info, ListChecks, FileImage, School } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { toast } from 'sonner';
 import { useSEO } from '../hooks/useSEO';
-import { formatCurrency } from '../utils/formatters';
-import api from '../data/api';
-import { link } from '../data/config';
+import { get } from '../data/api';
+import GeneralTab from '../components/settings/GeneralTab';
+import AmenitiesTab from '../components/settings/AmenitiesTab';
+import RulesTab from '../components/settings/RulesTab';
+import ImagesTab from '../components/settings/ImagesTab';
+import Skeleton from '../components/UI/Skeleton';
+import type { DormitorySettings } from '../components/settings/types';
 
-// Icon mapping for amenities
-const getAmenityIcon = (name: string) => {
-  const iconMap: { [key: string]: React.ReactNode } = {
-    'Wi-Fi': <Wifi className="w-5 h-5" />,
-    'WiFi': <Wifi className="w-5 h-5" />,
-    'Wifi': <Wifi className="w-5 h-5" />,
-    'Darsxona': <BookOpen className="w-5 h-5" />,
-    'O\'quv xonasi': <BookOpen className="w-5 h-5" />,
-    'Study Room': <BookOpen className="w-5 h-5" />,
-    'Kir yuvish': <WashingMachine className="w-5 h-5" />,
-    'Washing Machine': <WashingMachine className="w-5 h-5" />,
-    'Laundry': <WashingMachine className="w-5 h-5" />,
-    'Dam olish xonasi': <Tv className="w-5 h-5" />,
-    'TV': <Tv className="w-5 h-5" />,
-    'Television': <Tv className="w-5 h-5" />,
-    'Oshxona': <Coffee className="w-5 h-5" />,
-    'Kitchen': <Coffee className="w-5 h-5" />,
-    'Kafe': <Coffee className="w-5 h-5" />,
-  };
+const TABS = [
+  { id: 'general', label: 'Umumiy Ma\'lumotlar', icon: Info },
+  { id: 'amenities', label: 'Qulayliklar', icon: ListChecks },
+  { id: 'rules', label: 'Tartib Qoidalari', icon: ListChecks },
+  { id: 'images', label: 'Yotoqxona Suratlari', icon: FileImage },
+] as const;
 
-  // Try exact match first
-  if (iconMap[name]) return iconMap[name];
-
-  // Try partial matches
-  const lowerName = name.toLowerCase();
-  if (lowerName.includes('wifi') || lowerName.includes('internet')) return <Wifi className="w-5 h-5" />;
-  if (lowerName.includes('dars') || lowerName.includes('study') || lowerName.includes('o\'qu')) return <BookOpen className="w-5 h-5" />;
-  if (lowerName.includes('kir') || lowerName.includes('wash') || lowerName.includes('laundry')) return <WashingMachine className="w-5 h-5" />;
-  if (lowerName.includes('tv') || lowerName.includes('dam') || lowerName.includes('television')) return <Tv className="w-5 h-5" />;
-  if (lowerName.includes('oshxona') || lowerName.includes('kitchen') || lowerName.includes('kafe')) return <Coffee className="w-5 h-5" />;
-
-  // Default icon
-  return <ListChecks className="w-5 h-5" />;
-};
-
-function SectionCard({ icon, title, description, children, onEdit }: { icon: React.ReactNode; title: React.ReactNode; description?: string; children: React.ReactNode; onEdit?: () => void }) {
-  return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-4 sm:p-6 flex flex-col gap-3 sm:gap-4 border border-gray-100 dark:border-slate-700 relative group transition hover:shadow-2xl">
-      <div className="flex items-center gap-2 sm:gap-3 mb-1">
-        <span className="p-1.5 sm:p-2 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-200 flex-shrink-0">{icon}</span>
-        <h2 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 flex-1 min-w-0">{title}</h2>
-        {onEdit && (
-          <button onClick={onEdit} className="p-1.5 sm:p-2 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900 transition flex-shrink-0" title="Tahrirlash">
-            <Edit className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
-          </button>
-        )}
-      </div>
-      {description && <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 leading-relaxed">{description}</div>}
-      {children}
-    </div>
-  );
-}
-
-function EditableInput({ label, value, onChange, disabled, placeholder, helper, fullWidth, style, maxLength }: { label: string; value: string; onChange: (v: string) => void; disabled: boolean; placeholder?: string; helper?: string; fullWidth?: boolean; style?: React.CSSProperties; maxLength?: number }) {
-  return (
-    <div className={`flex flex-col gap-1 ${fullWidth ? 'w-full' : ''}`}>
-      <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{label}</label>
-      <input
-        className={`bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-sm sm:text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 ${disabled ? 'cursor-default' : 'cursor-text'}`}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        disabled={disabled}
-        placeholder={placeholder}
-        style={style}
-        maxLength={maxLength}
-      />
-      {helper && <span className="text-xs text-gray-400 mt-1">{helper}</span>}
-    </div>
-  );
-}
+type TabId = typeof TABS[number]['id'];
 
 const Settings: React.FC = () => {
-  // SEO
   useSEO('settings');
 
-  // Demo: queryClient o'chirilgan
-  
-  // Fetch dormitory settings from API
-  interface DormitorySettings {
-    id: number;
-    name: string;
-    address: string;
-    distance: number;
-    description: string;
-    month_price: number;
-    year_price: number;
-    latitude?: number;
-    longitude?: number;
-    rating?: number;
-    is_active?: boolean;
-    amenities: Array<{ id: number; name: string } | number>;
-    amenities_list?: Array<{ id: number; name: string }>;
-    university_name?: string;
-    university?: number;
-    admin?: { username: string; id: number } | number;
-    admin_name?: string;
-    images?: Array<{ id: number; image: string }>;
-    phone_numer?: string;
-    link?: string;
-  }
-  
-  const [settings, setSettings] = React.useState<DormitorySettings | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const [settings, setSettings] = useState<DormitorySettings | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabId>('general');
+  const [editSection, setEditSection] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchSettings = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const token = sessionStorage.getItem('access');
-        const response = await fetch(`${link}/admin/my-dormitories/`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (!response.ok) {
-          throw new Error('Sozlamalarni yuklashda xatolik');
-        }
-        
-        const data = await response.json();
-        // Paginated response dan birinchi dormitory ni olish
-        const dormitory = data.results && data.results.length > 0 ? data.results[0] : data;
+        const data = (await get('/admin/my-dormitories/')) as { results?: DormitorySettings[] } & Partial<DormitorySettings>;
+        const dormitory = data.results && data.results.length > 0 ? data.results[0] : (data as DormitorySettings);
         setSettings(dormitory);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Xatolik yuz berdi');
-        console.error('Settings fetch error:', err);
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchSettings();
   }, []);
 
-  // Fetch all amenities from API
-  const [allAmenities, setAllAmenities] = React.useState<Array<{ id: number; name: string; is_active: boolean }>>([]);
-  const [amenitiesLoading, setAmenitiesLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    const fetchAmenities = async () => {
-      setAmenitiesLoading(true);
-      try {
-        const data = await api.getAmenities();
-        // API paginated formatda qaytaradi: { count, next, previous, results }
-        const amenitiesList = data?.results || data || [];
-        setAllAmenities(Array.isArray(amenitiesList) ? amenitiesList : []);
-      } catch (err) {
-        console.error('Amenities fetch error:', err);
-        toast.error('Qulayliklarni yuklashda xatolik');
-      } finally {
-        setAmenitiesLoading(false);
-      }
-    };
-
-    fetchAmenities();
-  }, []);
-
-  // Fetch rules separately from /api/rules/
-  const [rulesData, setRulesData] = React.useState<Array<{ id: number; rule: string; dormitory: number }>>([]);
-  
-  React.useEffect(() => {
-    const fetchRules = async () => {
-      try {
-        const token = sessionStorage.getItem('access');
-        const response = await fetch(`${link}/rules/`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        const data = await response.json();
-        // Handle paginated response
-        const rulesArray = data.results || data;
-        setRulesData(rulesArray);
-      } catch (error) {
-        console.error('Failed to fetch rules:', error);
-        setRulesData([]);
-      }
-    };
-    
-    fetchRules();
-  }, []);
-
-  // Demo admin profil ma'lumotlari
-  const adminProfile = React.useMemo(() => ({
-    id: 1,
-    username: 'superadmin',
-    first_name: 'Admin',
-    last_name: 'Adminov',
-    email: 'admin@joybor.uz',
-    phone: '+998901234567',
-    telegram: '@joyboradmin',
-    bio: 'Yotoqxona administratori',
-    avatar: null,
-  }), []);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [editSection, setEditSection] = useState<string | null>(null);
-  const [rules, setRules] = useState<{ id?: number, rule: string }[]>([]);
-  const [contactForm, setContactForm] = useState({ phone: '', telegram: '' });
-  const [dormLoading, setDormLoading] = useState(false);
-  const [editDormCard, setEditDormCard] = useState(false);
-  const [editPricesCard, setEditPricesCard] = useState(false);
-  const [editDescription, setEditDescription] = useState(false);
-
-  const [dormCardForm, setDormCardForm] = useState({
-    name: '', 
-    address: '', 
-    distance: '',
-    phone_numer: '',
-    link: '',
-    latitude: '',
-    longitude: '',
-  });
-
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("Brauzeringiz geolokatsiyani qo'llab-quvvatlamaydi");
-      return;
-    }
-
-    toast.promise(
-      new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setDormCardForm(prev => ({
-              ...prev,
-              latitude: position.coords.latitude.toString(),
-              longitude: position.coords.longitude.toString()
-            }));
-            resolve(position);
-          },
-          (error) => {
-            reject(error);
-          }
-        );
-      }),
-      {
-        loading: 'Joylashuv aniqlanmoqda...',
-        success: 'Joylashuv muvaffaqiyatli aniqlandi!',
-        error: (err: any) => {
-          if (err.code === 1) return 'Joylashuvga ruxsat berilmadi';
-          if (err.code === 2) return 'Joylashuvni aniqlab bo\'lmadi';
-          if (err.code === 3) return 'Vaqt tugadi';
-          return 'Xatolik yuz berdi';
-        }
-      }
-    );
-  };
-  const [pricesCardForm, setPricesCardForm] = useState({
-    month_price: '', year_price: '',
-  });
-  const [descriptionForm, setDescriptionForm] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [localAmenities, setLocalAmenities] = useState<Array<{ id: number; name: string; is_active: boolean }>>([]);
-  const [deleteImageModal, setDeleteImageModal] = useState<{ show: boolean; imageId: number | null; imageUrl: string | null }>({ show: false, imageId: null, imageUrl: null });
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  // Type definition for amenity
-  type Amenity = { id: number; name: string; is_active: boolean };
-
-  // Telefon raqamini formatlash funksiyasi
-  const formatPhoneNumber = (value: string) => {
-    // Faqat raqamlarni qoldirish
-    const numbers = value.replace(/\D/g, '');
-
-    // Agar bo'sh bo'lsa, bo'sh qaytarish
-    if (numbers.length === 0) {
-      return '';
-    }
-
-    // Agar 998 bilan boshlanmasa, qo'shish
-    let formattedNumbers = numbers;
-    if (!numbers.startsWith('998')) {
-      if (numbers.startsWith('9')) {
-        formattedNumbers = '998' + numbers;
-      }
-    }
-
-    // Formatlash: +998 (XX) XXX XX XX
-    if (formattedNumbers.length >= 12) {
-      return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3, 5)}) ${formattedNumbers.slice(5, 8)} ${formattedNumbers.slice(8, 10)} ${formattedNumbers.slice(10, 12)}`;
-    } else if (formattedNumbers.length >= 10) {
-      return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3, 5)}) ${formattedNumbers.slice(5, 8)} ${formattedNumbers.slice(8, 10)} ${formattedNumbers.slice(10)}`;
-    } else if (formattedNumbers.length >= 8) {
-      return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3, 5)}) ${formattedNumbers.slice(5, 8)} ${formattedNumbers.slice(8)}`;
-    } else if (formattedNumbers.length >= 5) {
-      return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3, 5)}) ${formattedNumbers.slice(5)}`;
-    } else if (formattedNumbers.length >= 3) {
-      return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3)}`;
-    } else {
-      return `+${formattedNumbers}`;
-    }
-  };
-
-  // Telefon raqamini tozalash (faqat raqamlar)
-  const cleanPhoneNumber = (value: string) => {
-    return value.replace(/\D/g, '');
-  };
-
-  // Demo: Barcha mutation lar o'chirilgan
-
-  // All useEffect at the top
-  React.useEffect(() => {
-    if (settings) {
-      setDormCardForm({
-        name: settings.name || '',
-        address: settings.address || '',
-        distance: settings.distance ? String(settings.distance) : '',
-        phone_numer: settings.phone_numer || '',
-        link: settings.link || '',
-        latitude: settings.latitude ? String(settings.latitude) : '',
-        longitude: settings.longitude ? String(settings.longitude) : '',
-      });
-      setPricesCardForm({
-        month_price: settings.month_price ? String(settings.month_price) : '',
-        year_price: settings.year_price ? String(settings.year_price) : '',
-      });
-      setDescriptionForm(settings.description || '');
-    }
-  }, [settings]);
-
-  // Rules ma'lumotlarini alohida useEffect da handle qilish
-  React.useEffect(() => {
-    if (rulesData && rulesData.length > 0) {
-      // API dan kelgan rules ma'lumotlarini handle qilish
-      setRules(rulesData.map((r) => ({ id: r.id, rule: r.rule, dormitory: r.dormitory })));
-    }
-  }, [rulesData]);
-
-  // Amenities ma'lumotlarini local state ga yuklash
-  // Barcha qulayliklarni ko'rsatish, yotoqxonada mavjud bo'lganlarini belgilash
-  React.useEffect(() => {
-    if (allAmenities.length > 0 && settings) {
-      const dormitoryAmenityIds = (settings.amenities as Array<{ id?: number } | number>)?.map((a) => (typeof a === 'object' ? a.id : a)) || [];
-      
-      // Barcha qulayliklarni ko'rsatish, yotoqxonada mavjud bo'lganlarini is_active = true qilish
-      const mappedAmenities = allAmenities.map(amenity => ({
-        ...amenity,
-        is_active: dormitoryAmenityIds.includes(amenity.id)
-      }));
-      
-      setLocalAmenities(mappedAmenities);
-    }
-  }, [allAmenities, settings]);
-
-  // Contact form ni admin profil ma'lumotlari bilan to'ldirish
-  React.useEffect(() => {
-    if (adminProfile && !editSection) {
-      setContactForm({
-        phone: adminProfile.phone ? formatPhoneNumber(adminProfile.phone) : '',
-        telegram: adminProfile.telegram || ''
-      });
-    }
-  }, [adminProfile, editSection]);
-
-  // Edit section o'zgarganida rules ni qayta yuklash
-  React.useEffect(() => {
-    if (editSection === 'rules' && rulesData && rulesData.length > 0) {
-      // Rules edit mode ga kirganda API dan kelgan ma'lumotlarni qayta yuklash
-      setRules(rulesData.map((r) => ({ id: r.id, rule: r.rule, dormitory: r.dormitory })));
-    }
-  }, [editSection, rulesData]);
-
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-[60vh]"><div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-solid"></div></div>;
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Skeleton className="h-96 md:col-span-2 w-full rounded-xl" />
+          <Skeleton className="h-96 w-full rounded-xl" />
+        </div>
+      </div>
+    );
   }
   if (error || !settings) {
-    return <div className="text-center py-10 text-red-600 dark:text-red-400">Sozlamalarni yuklashda xatolik yuz berdi.</div>;
+    return (
+      <div className="p-8 max-w-7xl mx-auto w-full text-center">
+        <div className="p-6 bg-danger-50 dark:bg-danger-950/40 border border-danger-200 dark:border-danger-800 rounded-xl text-danger-700 dark:text-danger-300">
+          Sozlamalarni yuklashda xatolik yuz berdi. Iltimos qayta urinib ko'ring.
+        </div>
+      </div>
+    );
   }
 
-
-  // --- RULES STATE ---
-  const handleRuleChange = (idx: number, value: string) => {
-    setRules(rules => rules.map((r, i) => i === idx ? { ...r, rule: value } : r));
-  };
-  const handleAddRule = () => {
-    setRules(rules => [...rules, { rule: '' }]);
-  };
-
-  const handleRemoveRule = async (idx: number) => {
-    const ruleToRemove = rules[idx];
-    
-    // Agar rule ID ga ega bo'lsa, API dan o'chirish
-    if (ruleToRemove.id) {
-      try {
-        await api.deleteRule(ruleToRemove.id);
-        toast.success('Qoida o\'chirildi!');
-      } catch {
-        toast.error('Qoidani o\'chirishda xatolik!');
-        return;
-      }
-    }
-    
-    // Local state dan o'chirish
-    setRules(rules => rules.filter((_, i) => i !== idx));
-  };
-  
-  const handleSaveRules = async () => {
-    setDormLoading(true);
-    try {
-      // Har bir qoidani saqlash yoki yangilash
-      for (const rule of rules) {
-        if (!rule.rule.trim()) continue; // Bo'sh qoidalarni o'tkazib yuborish
-        
-        if (rule.id) {
-          // Mavjud qoidani yangilash
-          await api.updateRule(rule.id, { rule: rule.rule });
-        } else {
-          // Yangi qoida qo'shish
-          await api.createRule({ rule: rule.rule });
-        }
-      }
-      
-      // Yangilangan qoidalarni qayta yuklash
-      const token = sessionStorage.getItem('access');
-      const response = await fetch(`${link}/rules/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      const data = await response.json();
-      const rulesArray = data.results || data;
-      setRulesData(rulesArray);
-      
-      toast.success('Qoidalar saqlandi!');
-      setEditSection(null);
-    } catch (err) {
-      toast.error((err as Error)?.message || 'Xatolik yuz berdi!');
-    } finally {
-      setDormLoading(false);
-    }
-  };
-  // --- AMENITIES STATE ---
-
-  const handleAmenityChange = (idx: number, value: string) => {
-    setLocalAmenities(prev => prev.map((item, i) => i === idx ? { ...item, name: value } : item));
-  };
-
-  const handleAddAmenity = () => {
-    setLocalAmenities(prev => [...prev, { id: 0, name: '', is_active: true }]);
-  };
-
-  const handleRemoveAmenity = async (idx: number) => {
-    const amenityToRemove = localAmenities[idx];
-    if (amenityToRemove.id) {
-      try {
-        await api.deleteAmenity(amenityToRemove.id);
-        toast.success('Qulaylik o\'chirildi!');
-      } catch {
-        toast.error('Qulaylikni o\'chirishda xatolik!');
-        return;
-      }
-    }
-    setLocalAmenities(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  const handleSaveAmenities = async () => {
-    setDormLoading(true);
-    try {
-      const savedAmenityIds: number[] = [];
-      
-      // 1. Yangi qulayliklarni yaratish yoki mavjudlarini tahrirlash
-      for (const item of localAmenities) {
-        if (!item.name.trim()) continue;
-        
-        let savedItem;
-        if (item.id && item.id !== 0) {
-          // Mavjud qulaylikni tahrirlash
-          savedItem = await api.updateAmenity(item.id, { 
-            name: item.name, 
-            is_active: item.is_active 
-          });
-        } else {
-          // Yangi qulaylik qo'shish - har doim is_active: true bilan
-          savedItem = await api.createAmenity({ 
-            name: item.name, 
-            is_active: true 
-          });
-        }
-        
-        // Agar qulaylik faol bo'lsa (yoki yangi qo'shilgan bo'lsa), uni dormitoryga biriktirish ro'yxatiga qo'shish
-        // Backenddan qaytgan ID ni olishga harakat qilamiz
-        const finalId = savedItem?.id || item.id;
-        if (finalId && (item.is_active || !item.id)) {
-          savedAmenityIds.push(Number(finalId));
-        }
-      }
-
-      // 2. Dormitory settings ni yangilash (yangi qulayliklarni bog'lash)
-      if (settings) {
-        // Faqat kerakli maydonlarni yuboramiz
-        const updateData = {
-          name: settings.name || '',
-          address: settings.address || '',
-          distance: Number(settings.distance) || 0,
-          description: settings.description || '',
-          month_price: Number(settings.month_price) || 0,
-          year_price: Number(settings.year_price) || 0,
-          amenities: [...new Set(savedAmenityIds)] // Takrorlanishlarni olib tashlash
-        };
-        
-        await api.updateMyDormitory(updateData);
-      }
-
-      // 3. Barcha ma'lumotlarni qayta yuklash va keshni yangilash
-      const [amenitiesData, dormResponse] = await Promise.all([
-        api.getAmenities(),
-        fetch(`${link}/admin/my-dormitories/`, {
-          headers: {
-            'Authorization': `Bearer ${sessionStorage.getItem('access')}`,
-            'Content-Type': 'application/json',
-          },
-        })
-      ]);
-
-      // Global qulayliklar ro'yxatini yangilash
-      const amenitiesList = amenitiesData?.results || amenitiesData || [];
-      const finalAmenities = Array.isArray(amenitiesList) ? amenitiesList : [];
-      setAllAmenities(finalAmenities);
-      
-      // Yotoqxona ma'lumotlarini yangilash
-      const dormData = await dormResponse.json();
-      const dormitory = dormData.results && dormData.results.length > 0 ? dormData.results[0] : dormData;
-      setSettings(dormitory);
-
-      toast.success('Qulayliklar muvaffaqiyatli saqlandi!');
-      setEditSection(null);
-    } catch (err) {
-      console.error('Save amenities error:', err);
-      toast.error((err as Error)?.message || 'Xatolik yuz berdi!');
-    } finally {
-      setDormLoading(false);
-    }
-  };
-  // --- CONTACT STATE ---
-  // Telefon input handler
-  const handlePhoneChange = (value: string) => {
-    // Foydalanuvchi yozgan matnni to'g'ridan-to'g'ri saqlash
-    // Formatlash faqat saqlashda amalga oshiriladi
-    setContactForm(f => ({ ...f, phone: value }));
-  };
-
-  const handleSaveContact = async () => {
-    // Telefon raqamini tozalash
-    const cleanedPhone = cleanPhoneNumber(contactForm.phone);
-
-    // Validation
-    if (!cleanedPhone && !contactForm.telegram.trim()) {
-      toast.error('Kamida bitta aloqa ma\'lumotini kiriting!');
-      return;
-    }
-
-    // Telefon raqami validatsiyasi
-    if (cleanedPhone && cleanedPhone.length < 9) {
-      toast.error('Telefon raqami noto\'g\'ri formatda!');
-      return;
-    }
-
-    setDormLoading(true);
-    try {
-      // Admin profil ma'lumotlarini yangilash
-      const updateData: Record<string, string> = {};
-      if (cleanedPhone) updateData.phone = cleanedPhone;
-      if (contactForm.telegram.trim()) updateData.telegram = contactForm.telegram;
-      
-      await api.updateAdminProfile(updateData);
-      
-      toast.success('Aloqa ma\'lumotlari saqlandi!');
-      setEditSection(null);
-      
-      // Saqlashdan keyin telefon raqamini formatlash
-      if (cleanedPhone) {
-        setContactForm(f => ({ ...f, phone: formatPhoneNumber(cleanedPhone) }));
-      }
-    } catch (err) {
-      toast.error((err as Error)?.message || 'Xatolik yuz berdi!');
-    } finally {
-      setDormLoading(false);
-    }
-  };
-
-  // --- DORMITORY INFO STATE ---
-  const handleDormCardChange = (field: string, value: string) => {
-    setDormCardForm(f => ({ ...f, [field]: value }));
-  };
-  const handlePricesCardChange = (field: string, value: string) => {
-    setPricesCardForm(f => ({ ...f, [field]: value }));
-  };
-  const handleSaveDormCard = async () => {
-    setDormLoading(true);
-    try {
-      const updateData = {
-        name: dormCardForm.name,
-        address: dormCardForm.address,
-        distance: dormCardForm.distance ? parseFloat(dormCardForm.distance) : 0,
-        phone_numer: dormCardForm.phone_numer,
-        link: dormCardForm.link,
-        latitude: dormCardForm.latitude ? parseFloat(dormCardForm.latitude) : 0,
-        longitude: dormCardForm.longitude ? parseFloat(dormCardForm.longitude) : 0,
-        description: (settings.description as string) || '',
-        month_price: (settings.month_price as number) || 0,
-        year_price: (settings.year_price as number) || 0,
-        amenities: (settings.amenities as Array<{ id?: number } | number>)?.map((a) => (typeof a === 'object' ? a.id : a)) || []
-      };
-      
-      await api.updateMyDormitory(updateData);
-      
-      // Yangilangan ma'lumotlarni qayta yuklash
-      const token = sessionStorage.getItem('access');
-      const response = await fetch(`${link}/admin/my-dormitories/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      const data = await response.json();
-      const dormitory = data.results && data.results.length > 0 ? data.results[0] : data;
-      setSettings(dormitory);
-      
-      toast.success('Yotoqxona maʼlumotlari yangilandi!');
-      setEditDormCard(false);
-    } catch (err) {
-      toast.error((err as Error)?.message || 'Xatolik yuz berdi!');
-    } finally {
-      setDormLoading(false);
-    }
-  };
-  const handleSavePricesCard = async () => {
-    setDormLoading(true);
-    try {
-      const updateData = {
-        name: (settings.name as string) || '',
-        address: (settings.address as string) || '',
-        distance: (settings.distance as number) || 0,
-        description: (settings.description as string) || '',
-        month_price: pricesCardForm.month_price ? parseFloat(pricesCardForm.month_price) : 0,
-        year_price: pricesCardForm.year_price ? parseFloat(pricesCardForm.year_price) : 0,
-        amenities: (settings.amenities as Array<{ id?: number } | number>)?.map((a) => (typeof a === 'object' ? a.id : a)) || []
-      };
-      
-      await api.updateMyDormitory(updateData);
-      
-      // Yangilangan ma'lumotlarni qayta yuklash
-      const token = sessionStorage.getItem('access');
-      const response = await fetch(`${link}/admin/my-dormitories/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      const data = await response.json();
-      const dormitory = data.results && data.results.length > 0 ? data.results[0] : data;
-      setSettings(dormitory);
-      
-      toast.success('Narx ma\'lumotlari yangilandi!');
-      setEditPricesCard(false);
-    } catch (err) {
-      toast.error((err as Error)?.message || 'Xatolik yuz berdi!');
-    } finally {
-      setDormLoading(false);
-    }
-  };
-
-  const handleSaveDescription = async () => {
-    setDormLoading(true);
-    try {
-      const updateData = {
-        name: (settings.name as string) || '',
-        address: (settings.address as string) || '',
-        distance: (settings.distance as number) || 0,
-        description: descriptionForm,
-        month_price: (settings.month_price as number) || 0,
-        year_price: (settings.year_price as number) || 0,
-        amenities: (settings.amenities as Array<{ id?: number } | number>)?.map((a) => (typeof a === 'object' ? a.id : a)) || []
-      };
-      
-      await api.updateMyDormitory(updateData);
-      
-      // Yangilangan ma'lumotlarni qayta yuklash
-      const token = sessionStorage.getItem('access');
-      const response = await fetch(`${link}/admin/my-dormitories/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      const data = await response.json();
-      const dormitory = data.results && data.results.length > 0 ? data.results[0] : data;
-      setSettings(dormitory);
-      
-      toast.success('Tavsif muvaffaqiyatli yangilandi!');
-      setEditDescription(false);
-    } catch (err) {
-      toast.error((err as Error)?.message || 'Xatolik yuz berdi!');
-    } finally {
-      setDormLoading(false);
-    }
-  };
-
-  const handleDeleteImage = async () => {
-    if (!deleteImageModal.imageId) return;
-    
-    setIsDeleting(true);
-    try {
-      await api.deleteDormitoryImage(deleteImageModal.imageId);
-      
-      // Yangilangan ma'lumotlarni qayta yuklash
-      const token = sessionStorage.getItem('access');
-      const response = await fetch(`${link}/admin/my-dormitories/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      const data = await response.json();
-      const dormitory = data.results && data.results.length > 0 ? data.results[0] : data;
-      setSettings(dormitory);
-      
-      toast.success('Rasm o\'chirildi!');
-      setDeleteImageModal({ show: false, imageId: null, imageUrl: null });
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Rasmni o\'chirishda xatolik!';
-      toast.error(errorMessage);
-    } finally {
-      setIsDeleting(false);
-    }
+  const handleTabChange = (tab: TabId) => {
+    setActiveTab(tab);
+    setEditSection(null);
   };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 40 }}
-      transition={{ duration: 0.4, ease: 'easeInOut' }}
-      className="p-4 sm:p-6 max-w-5xl mx-auto w-full"
+      exit={{ opacity: 0, y: 20 }}
+      transition={{ duration: 0.15, ease: 'easeInOut' }}
+      className="space-y-6 w-full"
     >
-      <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mb-6 sm:mb-10">
-        {/* University logo and name */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center border border-gray-200 dark:border-gray-700 shadow p-2">
-            <img src="/logoicon.svg" alt="University Logo" className="w-full h-full object-contain" />
+      {/* Top Banner / Header Card */}
+      <div className="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-brand-50 dark:bg-surface-800 rounded-xl flex items-center justify-center border border-brand-100 dark:border-surface-700 shadow-sm shrink-0 p-2">
+            <img src="/logoicon.svg" alt="JoyBor" className="w-full h-full object-contain" />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm sm:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <School className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 flex-shrink-0" /> 
-              <span className="truncate">{settings.university_name || 'Universitet'}</span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <School className="w-4 h-4 text-brand-600 dark:text-brand-400 shrink-0" />
+              <h1 className="text-lg sm:text-xl font-bold text-surface-900 dark:text-white truncate">
+                {settings.name || settings.university_name || 'Yotoqxona Sozlamalari'}
+              </h1>
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">{settings.address || ''}</div>
+            <p className="text-xs text-surface-500 dark:text-surface-400 mt-1 truncate">
+              {settings.address || settings.university_name || "Yotoqxona ma'lumotlarini boshqarish"}
+            </p>
           </div>
         </div>
-        <div className="flex-1" />
-        {/* Admin info */}
-        <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/30 px-3 sm:px-4 py-2 rounded-lg">
-          <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 flex-shrink-0" />
-          <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm sm:text-base truncate">{settings.admin_name || (typeof settings.admin === 'object' ? settings.admin?.username : 'Admin')}</span>
-          <span className="text-xs text-gray-500 ml-1 sm:ml-2 flex-shrink-0">Admin</span>
+
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <div className="flex items-center gap-2 bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 px-3.5 py-2 rounded-lg">
+            <div className="w-7 h-7 rounded-full bg-brand-600 text-white font-bold text-xs flex items-center justify-center">
+              {(settings.admin_name?.[0] || 'A').toUpperCase()}
+            </div>
+            <div className="text-left">
+              <p className="text-xs font-bold text-surface-900 dark:text-white leading-none">
+                {settings.admin_name || (typeof settings.admin === 'object' ? settings.admin?.username : 'Admin')}
+              </p>
+              <p className="text-[10px] text-surface-500 leading-none mt-0.5">Yotoqxona Admini</p>
+            </div>
+          </div>
         </div>
       </div>
 
-
-
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-4 sm:mb-6 lg:mb-10">
-        {/* Dormitory Info Card */}
-        <SectionCard
-          icon={<Info className="w-8 h-8 text-blue-600" />}
-          title={((<span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Yotoqxona haqida</span>) as React.ReactNode)}
-          onEdit={() => setEditDormCard(true)}
-        >
-          <div className="rounded-lg bg-gray-50 dark:bg-slate-700/50 p-4 flex flex-col gap-4 border border-gray-200 dark:border-slate-600">
-            {editDormCard ? (
-              <>
-                <EditableInput label="Nomi" value={dormCardForm.name} onChange={v => handleDormCardChange('name', v)} disabled={dormLoading} fullWidth />
-                <EditableInput label="Manzil" value={dormCardForm.address} onChange={v => handleDormCardChange('address', v)} disabled={dormLoading} fullWidth />
-                <EditableInput label="Universitetgacha masofa (km)" value={dormCardForm.distance} onChange={v => handleDormCardChange('distance', v)} disabled={dormLoading} fullWidth />
-                <EditableInput label="Telefon raqami" value={dormCardForm.phone_numer} onChange={v => handleDormCardChange('phone_numer', v)} disabled={dormLoading} fullWidth placeholder="+998901234567" />
-                <EditableInput label="Havola (Link)" value={dormCardForm.link} onChange={v => handleDormCardChange('link', v)} disabled={dormLoading} fullWidth placeholder="https://..." />
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <EditableInput label="Latitude" value={dormCardForm.latitude} onChange={v => handleDormCardChange('latitude', v)} disabled={dormLoading} fullWidth placeholder="41.2995" />
-                  <EditableInput label="Longitude" value={dormCardForm.longitude} onChange={v => handleDormCardChange('longitude', v)} disabled={dormLoading} fullWidth placeholder="69.2401" />
-                </div>
-                
-                <button
-                  onClick={handleGetLocation}
-                  disabled={dormLoading}
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition text-sm font-semibold"
-                >
-                  <MapPin className="w-4 h-4" />
-                  Hozirgi joylashuvni aniqlash
-                </button>
-
-                <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                  <button className="px-4 sm:px-6 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition text-sm sm:text-base" onClick={handleSaveDormCard} disabled={dormLoading}>{dormLoading ? 'Saqlanmoqda...' : 'Saqlash'}</button>
-                  <button className="px-4 sm:px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm sm:text-base" onClick={() => setEditDormCard(false)} disabled={dormLoading}>Bekor qilish</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg">
-                  <Info className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">Nomi</div>
-                    <span className="font-semibold text-gray-900 dark:text-white">{settings.name}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg">
-                  <MapPin className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">Manzil</div>
-                    <span className="text-gray-900 dark:text-white">{settings.address}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg">
-                  <School className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">Universitetgacha masofa</div>
-                    <span className="text-gray-900 dark:text-white">{settings.distance} km</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg">
-                  <Phone className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">Telefon raqami</div>
-                    <span className="text-gray-900 dark:text-white">{settings.phone_numer || 'Kiritilmagan'}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg">
-                  <Info className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">Havola</div>
-                    <span className="text-gray-900 dark:text-white truncate max-w-[200px] block">
-                      {settings.link ? (
-                        <a href={settings.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                          {settings.link}
-                        </a>
-                      ) : (
-                        'Kiritilmagan'
-                      )}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg">
-                  <MapPin className="w-5 h-5 text-blue-600" />
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Latitude</div>
-                      <span className="text-gray-900 dark:text-white">{settings.latitude || 'Kiritilmagan'}</span>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Longitude</div>
-                      <span className="text-gray-900 dark:text-white">{settings.longitude || 'Kiritilmagan'}</span>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </SectionCard>
-        
-
-        
-        {/* Prices Card */}
-        <SectionCard
-          icon={<DollarSign className="w-8 h-8 text-green-600" />}
-          title={((<span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Narx ma'lumotlari</span>) as React.ReactNode)}
-          description={editPricesCard ? undefined : "Oylik va yillik narxlar"}
-          onEdit={() => setEditPricesCard(true)}
-        >
-          <div className="rounded-xl bg-gray-50 dark:bg-slate-700/50 p-4 flex flex-col gap-4 border border-gray-100 dark:border-slate-600">
-            {editPricesCard ? (
-              <>
-                <EditableInput label="Oylik narx (so'm)" value={pricesCardForm.month_price} onChange={v => handlePricesCardChange('month_price', v)} disabled={dormLoading} fullWidth placeholder="1200000" />
-                <EditableInput label="Yillik narx (so'm)" value={pricesCardForm.year_price} onChange={v => handlePricesCardChange('year_price', v)} disabled={dormLoading} fullWidth placeholder="12000000" />
-                <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                  <button className="px-4 sm:px-6 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition text-sm sm:text-base" onClick={handleSavePricesCard} disabled={dormLoading}>{dormLoading ? 'Saqlanmoqda...' : 'Saqlash'}</button>
-                  <button className="px-4 sm:px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm sm:text-base" onClick={() => setEditPricesCard(false)} disabled={dormLoading}>Bekor qilish</button>
-                </div>
-              </>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-600">
-                  <div className="flex items-center gap-3">
-                    <DollarSign className="w-5 h-5 text-green-500" />
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Oylik narx</span>
-                  </div>
-                  <span className="font-bold text-green-600 dark:text-green-400">{formatCurrency(settings.month_price)}</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-600">
-                  <div className="flex items-center gap-3">
-                    <DollarSign className="w-5 h-5 text-green-500" />
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Yillik narx</span>
-                  </div>
-                  <span className="font-bold text-green-600 dark:text-green-400">{formatCurrency(settings.year_price)}</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </SectionCard>
-        {/* Description Card */}
-        <SectionCard
-          icon={<BookOpen className="w-8 h-8 text-purple-600" />}
-          title={((<span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Tavsif</span>) as React.ReactNode)}
-          description={editDescription ? undefined : "Yotoqxona haqida batafsil ma'lumot"}
-          onEdit={() => setEditDescription(true)}
-        >
-          <div className="rounded-lg bg-gray-50 dark:bg-slate-700/50 p-4 flex flex-col gap-4 border border-gray-200 dark:border-slate-600">
-            {editDescription ? (
-              <>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">Tavsif</label>
-                  <textarea
-                    className="bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white text-sm sm:text-base font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 min-h-[120px] max-h-[300px] resize-y"
-                    value={descriptionForm}
-                    onChange={e => setDescriptionForm(e.target.value)}
-                    disabled={dormLoading}
-                    placeholder="Yotoqxona haqida batafsil ma'lumot kiriting..."
-                    maxLength={1000}
-                  />
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                  <button className="px-4 sm:px-6 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition text-sm sm:text-base" onClick={handleSaveDescription} disabled={dormLoading}>{dormLoading ? 'Saqlanmoqda...' : 'Saqlash'}</button>
-                  <button className="px-4 sm:px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm sm:text-base" onClick={() => { setEditDescription(false); setDescriptionForm(settings?.description || ''); }} disabled={dormLoading}>Bekor qilish</button>
-                </div>
-              </>
-            ) : (
-              <div className="p-3 bg-white dark:bg-slate-800 rounded-lg max-h-[200px] overflow-y-auto">
-                <div className="text-gray-900 dark:text-white leading-relaxed whitespace-pre-wrap break-words">
-                  {settings.description || 'Tavsif kiritilmagan'}
-                </div>
-              </div>
-            )}
-          </div>
-        </SectionCard>
-
-        {/* Amenities Section */}
-        <SectionCard
-          icon={<ListChecks className="w-6 h-6" />}
-          title="Qulayliklar"
-          description="Yotoqxonada mavjud bo'lgan qulayliklar. Ro'yxatni tahrirlash va yangi qulaylik qo'shish mumkin."
-          onEdit={() => setEditSection(editSection === 'amenities' ? null : 'amenities')}
-        >
-          <ul className="space-y-3">
-            {localAmenities.map((item, idx) => (
-              <li key={idx} className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <div className={`p-2 rounded-lg flex-shrink-0 ${
-                    item.is_active 
-                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' 
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-400'
-                  }`}>
-                    {getAmenityIcon(item.name)}
-                  </div>
-                  {editSection === 'amenities' ? (
-                    <div className="flex-1 flex items-center gap-2">
-                      <input
-                        className="flex-1 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
-                        value={item.name}
-                        onChange={e => handleAmenityChange(idx, e.target.value)}
-                        placeholder="Qulaylik nomi..."
-                      />
-                      <label className="flex items-center gap-2 cursor-pointer bg-gray-50 dark:bg-slate-700 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          checked={item.is_active}
-                          onChange={() => {
-                            setLocalAmenities(prev => prev.map((a, i) => i === idx ? { ...a, is_active: !a.is_active } : a));
-                          }}
-                        />
-                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Faol</span>
-                      </label>
-                      <button
-                        onClick={() => handleRemoveAmenity(idx)}
-                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex items-center justify-between">
-                      <span className={`font-medium text-sm ${item.is_active ? 'text-gray-900 dark:text-white' : 'text-gray-400 line-through'}`}>
-                        {item.name}
-                      </span>
-                      {item.is_active && (
-                        <span className="text-[10px] font-bold text-green-600 dark:text-green-500 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full uppercase tracking-wider">Faol</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-          {editSection === 'amenities' && (
-            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700 space-y-4">
-              <button
-                onClick={handleAddAmenity}
-                className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-semibold hover:underline"
-              >
-                <Plus className="w-5 h-5" />
-                Qulaylik qo'shish
-              </button>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  onClick={handleSaveAmenities}
-                  disabled={dormLoading}
-                >
-                  {dormLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Saqlanmoqda...
-                    </>
-                  ) : (
-                    'Saqlash'
-                  )}
-                </button>
-                <button
-                  className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition"
-                  onClick={() => {
-                    setEditSection(null);
-                    if (allAmenities.length > 0 && settings) {
-                      const dormitoryAmenityIds = (settings.amenities as Array<{ id?: number } | number>)?.map((a) => (typeof a === 'object' ? a.id : a)) || [];
-                      const mappedAmenities = allAmenities.map(amenity => ({
-                        ...amenity,
-                        is_active: dormitoryAmenityIds.includes(amenity.id)
-                      }));
-                      setLocalAmenities(mappedAmenities);
-                    }
-                  }}
-                >
-                  Bekor qilish
-                </button>
-              </div>
-            </div>
-          )}
-        </SectionCard>
-        {/* Contact Section - Admin Profile dan */}
-        <SectionCard
-          icon={<User className="w-6 h-6" />}
-          title="Aloqa ma'lumotlari"
-          description="Admin profil ma'lumotlaridan olingan aloqa ma'lumotlari"
-          onEdit={() => setEditSection(editSection === 'contact' ? null : 'contact')}
-        >
-          <div className="space-y-4">
-            {editSection === 'contact' ? (
-              <>
-                <EditableInput
-                  label="Telefon raqami"
-                  value={contactForm.phone}
-                  onChange={handlePhoneChange}
-                  disabled={false}
-                  placeholder="+998 90 123 45 67"
-                  fullWidth
-                  maxLength={19}
-                />
-                <EditableInput
-                  label="Telegram"
-                  value={contactForm.telegram}
-                  onChange={v => setContactForm(f => ({ ...f, telegram: v }))}
-                  disabled={false}
-                  placeholder="@username"
-                  fullWidth
-                />
-                <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                  <button
-                    className="px-4 sm:px-6 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    onClick={handleSaveContact}
-                    disabled={dormLoading}
-                  >
-                    {dormLoading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Saqlanmoqda...
-                      </>
-                    ) : (
-                      'Saqlash'
-                    )}
-                  </button>
-                  <button
-                    className="px-4 sm:px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm sm:text-base"
-                    onClick={() => {
-                      setEditSection(null);
-                      // Original ma'lumotlarni qaytarish
-                      setContactForm({
-                        phone: adminProfile?.phone ? formatPhoneNumber(adminProfile.phone) : '',
-                        telegram: adminProfile?.telegram || ''
-                      });
-                    }}
-                  >
-                    Bekor qilish
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg border border-gray-200 dark:border-slate-600">
-                  <Phone className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">Telefon raqami</div>
-                    <div className="text-gray-900 dark:text-white font-semibold">
-                      {adminProfile?.phone ? formatPhoneNumber(adminProfile.phone) : 'Kiritilmagan'}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg border border-gray-200 dark:border-slate-600">
-                  <Send className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">Telegram</div>
-                    <div className="text-gray-900 dark:text-white font-semibold">
-                      {adminProfile?.telegram || 'Kiritilmagan'}
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </SectionCard>
-
-        {/* Rules Section (edit-in-place) */}
-        <SectionCard
-          icon={<ListChecks className="w-6 h-6" />}
-          title="Qonun-qoidalar"
-          description="Yotoqxonada amal qilinishi shart bo'lgan asosiy qoidalar. Ro'yxatni tahrirlash va yangi qoida qo'shish mumkin."
-          onEdit={() => setEditSection(editSection === 'rules' ? null : 'rules')}
-        >
-          <ul className="list-disc space-y-2 text-gray-700 dark:text-gray-200">
-            {rules.map((rule, i) => (
-              <li key={i} className="flex items-center gap-2">
-                <EditableInput
-                  label=""
-                  value={rule.rule}
-                  onChange={v => handleRuleChange(i, v)}
-                  disabled={editSection !== 'rules'}
-                  placeholder="Qoida matni"
-                  helper={editSection === 'rules' && i === rules.length - 1 ? 'Yangi qoida qo\'shish uchun pastdagi tugmani bosing' : undefined}
-                  fullWidth
-                />
-                {editSection === 'rules' && rules.length > 1 && (
-                  <button
-                    className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900"
-                    title="O'chirish"
-                    onClick={() => handleRemoveRule(i)}
-                  >
-                    <span className="text-red-500 font-bold">×</span>
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-          {editSection === 'rules' && (
-            <div className="flex flex-col sm:flex-row gap-2 mt-4">
-              <button
-                className="flex items-center gap-1 px-3 sm:px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition text-sm sm:text-base"
-                onClick={handleAddRule}
-              >
-                <Plus className="w-4 h-4" /> Yangi qoida qo'shish
-              </button>
-              <button
-                className="px-4 sm:px-6 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                onClick={handleSaveRules}
-                disabled={dormLoading}
-              >
-                {dormLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Saqlanmoqda...
-                  </>
-                ) : (
-                  'Saqlash'
-                )}
-              </button>
-            </div>
-          )}
-        </SectionCard>
-      </div>
-      {/* Images */}
-      <SectionCard
-        icon={<FileImage className="w-6 h-6" />}
-        title="Yotoqxona suratlari"
-        description="Yotoqxona va xonalar haqidagi suratlar."
-        onEdit={() => setEditSection(editSection === 'images' ? null : 'images')}
-      >
-        {/* Rasm yuklash tugmasi faqat tahrirlash rejimida */}
-        {editSection === 'images' && (
-          <div className="mb-4">
+      {/* Modern Tabs */}
+      <div className="flex gap-2 border-b border-surface-200 dark:border-surface-800 pb-3 overflow-x-auto">
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
             <button
-              className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition mb-2 flex items-center gap-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors shadow-sm ${
+                isActive
+                  ? 'bg-brand-600 text-white'
+                  : 'bg-white dark:bg-surface-900 text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 border border-surface-200 dark:border-surface-800'
+              }`}
             >
-              {isUploading ? 'Yuklanmoqda...' : "+ Rasm qo'shish"}
+              <Icon className="w-4 h-4" />
+              <span>{tab.label}</span>
             </button>
-            
-            {/* Progress bar - Telegram style */}
-            {isUploading && (
-              <div className="mt-3 bg-gray-100 dark:bg-slate-700 rounded-lg p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Yuklanmoqda...</span>
-                  <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">{uploadProgress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-slate-600 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className="bg-blue-600 h-full rounded-full transition-all duration-300 ease-out"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-              </div>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              ref={fileInputRef}
-              className="hidden"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                
-                // Rasm hajmini tekshirish (max 5MB)
-                if (file.size > 5 * 1024 * 1024) {
-                  toast.error('Rasm hajmi 5MB dan oshmasligi kerak!');
-                  return;
-                }
-                
-                // Rasm formatini tekshirish
-                if (!file.type.startsWith('image/')) {
-                  toast.error('Faqat rasm fayllari yuklanadi!');
-                  return;
-                }
-                
-                setIsUploading(true);
-                setUploadProgress(0);
-                
-                try {
-                  const formData = new FormData();
-                  formData.append('image', file);
-                  
-                  // Simulate progress for better UX
-                  const progressInterval = setInterval(() => {
-                    setUploadProgress(prev => {
-                      if (prev >= 90) {
-                        clearInterval(progressInterval);
-                        return 90;
-                      }
-                      return prev + 10;
-                    });
-                  }, 200);
-                  
-                  await api.uploadDormitoryImage(formData);
-                  
-                  clearInterval(progressInterval);
-                  setUploadProgress(95);
-                  
-                  // Yangilangan ma'lumotlarni qayta yuklash
-                  const token = sessionStorage.getItem('access');
-                  const response = await fetch(`${link}/admin/my-dormitory/`, {
-                    headers: {
-                      'Authorization': `Bearer ${token}`,
-                      'Content-Type': 'application/json',
-                    },
-                  });
-                  
-                  if (!response.ok) {
-                    throw new Error('Ma\'lumotlarni yangilashda xatolik');
-                  }
-                  
-                  const data = await response.json();
-                  const dormitory = data.results && data.results.length > 0 ? data.results[0] : data;
-                  setSettings(dormitory);
-                  
-                  setUploadProgress(100);
-                  
-                  setTimeout(() => {
-                    toast.success('Rasm muvaffaqiyatli yuklandi!');
-                  }, 300);
-                } catch (err: unknown) {
-                  const errorMessage = (err as Error)?.message || 'Rasm yuklashda xatolik!';
-                  toast.error(errorMessage);
-                  console.error('Image upload error:', err);
-                } finally {
-                  setTimeout(() => {
-                    setIsUploading(false);
-                    setUploadProgress(0);
-                  }, 500);
-                  // Input ni tozalash
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                  }
-                }
-              }}
-            />
-          </div>
-        )}
+          );
+        })}
+      </div>
 
-        {/* Rasmlar slider shaklida */}
-        {settings?.images && settings.images.length > 0 ? (
-          <div className="relative">
-            <div className="flex gap-4 overflow-x-auto pb-4" style={{
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#cbd5e1 #f1f5f9'
-            }}>
-              {(settings?.images || []).map((img: { id: number; image: string }, i: number) => (
-                <div key={i} className="relative flex-shrink-0 group">
-                  <img
-                    src={img.image}
-                    alt={`Yotoqxona rasmi ${i + 1}`}
-                    className="w-full sm:w-64 h-40 sm:h-48 object-cover rounded-lg border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow"
-                  />
-                  {/* O'chirish tugmasi faqat tahrirlash rejimida ko'rinadi */}
-                  {editSection === 'images' && (
-                    <button
-                      onClick={() => setDeleteImageModal({ show: true, imageId: img.id, imageUrl: img.image })}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg"
-                      title="Rasmni o'chirish"
-                    >
-                      <span className="text-lg font-bold">×</span>
-                    </button>
-                  )}
-                  {/* Rasm tartib raqami */}
-                  <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
-                    {i + 1} / {settings?.images?.length || 0}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="text-center text-gray-500 dark:text-gray-400 py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
-            <FileImage className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p>Hozircha rasmlar yuklanmagan</p>
-            {editSection !== 'images' && (
-              <p className="text-sm mt-1">Rasm yuklash uchun "Tahrirlash" tugmasini bosing</p>
-            )}
-          </div>
-        )}
-      </SectionCard>
+      {/* Tab Contents */}
+      {activeTab === 'general' && (
+        <GeneralTab
+          settings={settings}
+          onSettingsUpdate={setSettings}
+          editSection={editSection}
+          setEditSection={setEditSection}
+        />
+      )}
 
-      {/* Delete Image Modal */}
-      {deleteImageModal.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
-          >
-            {/* Modal Header */}
-            <div className="p-6 border-b border-gray-200 dark:border-slate-700">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Rasmni o'chirish</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Bu amalni bekor qilib bo'lmaydi</p>
-            </div>
+      {activeTab === 'amenities' && (
+        <AmenitiesTab
+          settings={settings}
+          onSettingsUpdate={setSettings}
+          editSection={editSection}
+          setEditSection={setEditSection}
+        />
+      )}
 
-            {/* Modal Body */}
-            <div className="p-6">
-              {deleteImageModal.imageUrl && (
-                <div className="mb-4">
-                  <img
-                    src={deleteImageModal.imageUrl}
-                    alt="O'chiriladigan rasm"
-                    className="w-full h-48 object-cover rounded-lg border border-gray-200 dark:border-slate-600"
-                  />
-                </div>
-              )}
-              <p className="text-gray-700 dark:text-gray-300">
-                Rostdan ham bu rasmni o'chirmoqchimisiz?
-              </p>
-              <p className="text-sm text-red-600 dark:text-red-400 mt-2">
-                Bu amal qaytarilmaydi va rasm butunlay yo'qoladi.
-              </p>
-            </div>
+      {activeTab === 'rules' && (
+        <RulesTab editSection={editSection} setEditSection={setEditSection} />
+      )}
 
-            {/* Modal Footer */}
-            <div className="p-6 bg-gray-50 dark:bg-slate-900 flex gap-3 justify-end">
-              <button
-                onClick={() => setDeleteImageModal({ show: false, imageId: null, imageUrl: null })}
-                disabled={isDeleting}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 rounded-lg transition-colors border border-gray-300 dark:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Bekor qilish
-              </button>
-              <button
-                onClick={handleDeleteImage}
-                disabled={isDeleting}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {isDeleting ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-                    </svg>
-                    O'chirilmoqda...
-                  </>
-                ) : (
-                  'O\'chirish'
-                )}
-              </button>
-            </div>
-          </motion.div>
-        </div>
+      {activeTab === 'images' && (
+        <ImagesTab
+          settings={settings}
+          onSettingsUpdate={setSettings}
+          editSection={editSection}
+          setEditSection={setEditSection}
+        />
       )}
     </motion.div>
   );

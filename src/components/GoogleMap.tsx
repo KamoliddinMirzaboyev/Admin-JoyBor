@@ -4,7 +4,7 @@ import { MapPin, Navigation, AlertCircle, RefreshCw } from 'lucide-react';
 // Global type declaration
 declare global {
   interface Window {
-    google: any;
+    google: unknown;
     googleMapsReady: boolean;
     initGoogleMaps: () => void;
   }
@@ -34,12 +34,10 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
 
   const createMap = () => {
     if (!mapRef.current || !window.google?.maps) {
-      console.log('❌ Map container or Google Maps not ready');
       return;
     }
 
     try {
-      console.log('🗺️ Creating Google Map...');
 
       // Create map
       const mapInstance = new window.google.maps.Map(mapRef.current, {
@@ -87,7 +85,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         }
       });
 
-      mapInstance.addListener('click', (event: any) => {
+      mapInstance.addListener('click', (event: unknown) => {
         if (event.latLng) {
           const lat = event.latLng.lat();
           const lng = event.latLng.lng();
@@ -106,38 +104,31 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
       setIsLoading(false);
       setError('');
 
-      console.log('✅ Google Map created successfully');
     } catch (err) {
-      console.error('❌ Error creating map:', err);
       setError('Xaritani yaratishda xatolik');
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    console.log('🔄 GoogleMap useEffect triggered');
 
     const initMap = () => {
       if (window.google?.maps && mapRef.current) {
         createMap();
       } else {
-        console.log('⏳ Waiting for Google Maps API or DOM...');
       }
     };
 
     // Check if already loaded
     if (window.google?.maps) {
-      console.log('✅ Google Maps already loaded');
       setTimeout(initMap, 100); // Small delay for DOM
     } else {
       // Listen for load event
       const handleLoad = () => {
-        console.log('📡 Google Maps loaded via event');
         setTimeout(initMap, 100);
       };
 
       const handleError = () => {
-        console.error('❌ Google Maps failed to load');
         setError('Google Maps yuklanmadi');
         setIsLoading(false);
       };
@@ -179,7 +170,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
 
           if (onLocationSelect) {
             const geocoder = new window.google.maps.Geocoder();
-            geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
+            geocoder.geocode({ location: { lat, lng } }, (results: unknown, status: unknown) => {
               const address = (status === 'OK' && results?.[0])
                 ? results[0].formatted_address
                 : `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
@@ -189,7 +180,6 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         }
       },
       (error) => {
-        console.error('Geolocation error:', error);
         setError('Joylashuvni aniqlab bo\'lmadi');
       }
     );
@@ -218,13 +208,13 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   if (isLoading) {
     return (
       <div
-        className="flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+        className="flex items-center justify-center bg-surface-100 dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700"
         style={{ height }}
       >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-          <p className="text-gray-600 dark:text-gray-400">Xarita yuklanmoqda...</p>
-          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Google Maps API kutilmoqda</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600 mx-auto mb-2"></div>
+          <p className="text-surface-600 dark:text-surface-400">Xarita yuklanmoqda...</p>
+          <p className="text-xs text-surface-500 dark:text-surface-500 mt-1">Google Maps API kutilmoqda</p>
         </div>
       </div>
     );
@@ -233,16 +223,16 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   if (error) {
     return (
       <div
-        className="flex items-center justify-center bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800"
+        className="flex items-center justify-center bg-danger-50 dark:bg-danger-900/20 rounded-xl border border-danger-200 dark:border-danger-800"
         style={{ height }}
       >
-        <div className="text-center text-red-600 dark:text-red-400 p-4">
+        <div className="text-center text-danger-600 dark:text-danger-400 p-4">
           <AlertCircle className="w-12 h-12 mx-auto mb-3" />
           <h3 className="font-semibold mb-2">Xarita yuklanmadi</h3>
           <p className="text-sm mb-4">{error}</p>
           <button
             onClick={retryLoad}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-danger-600 text-white rounded-xl text-sm hover:bg-danger-700 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
             Qayta yuklash
@@ -256,7 +246,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     <div className="relative">
       <div
         ref={mapRef}
-        className="w-full rounded-lg border border-gray-200 dark:border-gray-700"
+        className="w-full rounded-xl border border-surface-200 dark:border-surface-700"
         style={{ height }}
       />
 
@@ -264,25 +254,25 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         <div className="absolute top-2 right-2 flex flex-col gap-2">
           <button
             onClick={getCurrentLocation}
-            className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-md hover:shadow-lg transition-all border border-gray-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+            className="bg-white dark:bg-surface-800 p-2 rounded-xl shadow-md hover:shadow-sm transition-all border border-surface-200 dark:border-surface-700 hover:bg-brand-50 dark:hover:bg-brand-900/20"
             title="Joriy joylashuvni aniqlash"
           >
-            <Navigation className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <Navigation className="w-4 h-4 text-brand-600 dark:text-brand-400" />
           </button>
 
           <button
             onClick={centerMap}
-            className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-md hover:shadow-lg transition-all border border-gray-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+            className="bg-white dark:bg-surface-800 p-2 rounded-xl shadow-md hover:shadow-sm transition-all border border-surface-200 dark:border-surface-700 hover:bg-brand-50 dark:hover:bg-brand-900/20"
             title="Markerni markazga qaytarish"
           >
-            <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <MapPin className="w-4 h-4 text-brand-600 dark:text-brand-400" />
           </button>
         </div>
       )}
 
-      <div className="absolute bottom-2 left-2 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow-md text-xs border border-gray-200 dark:border-gray-700">
-        <div className="text-gray-600 dark:text-gray-400 font-medium">Koordinatalar:</div>
-        <div className="text-blue-600 dark:text-blue-400 font-mono">
+      <div className="absolute bottom-2 left-2 bg-white dark:bg-surface-800 px-3 py-2 rounded-xl shadow-md text-xs border border-surface-200 dark:border-surface-700">
+        <div className="text-surface-600 dark:text-surface-400 font-medium">Koordinatalar:</div>
+        <div className="text-brand-600 dark:text-brand-400 font-mono">
           {currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}
         </div>
       </div>
