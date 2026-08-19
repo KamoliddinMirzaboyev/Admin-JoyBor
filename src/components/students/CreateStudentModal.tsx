@@ -158,20 +158,12 @@ const emptyFiles: Record<StudentFileKey, File | null> = {
   document: null,
 };
 
-const COURSE_OPTIONS = [
-  '1-kurs',
-  '2-kurs',
-  '3-kurs',
-  '4-kurs',
-  '5-kurs',
-  '6-kurs',
-  'Magistratura 1-kurs',
-  'Magistratura 2-kurs',
-];
+// Backend faqat shu qiymatlarni qabul qiladi (API kontrakt, /admin/students/ POST)
+const COURSE_OPTIONS = ['1-kurs', '2-kurs', '3-kurs', '4-kurs', '5-kurs'];
 
 const GENDER_OPTIONS = ['Erkak', 'Ayol'];
 const STATUS_OPTIONS = ['Tasdiqlandi', 'Tekshirilmoqda', 'Tekshirilmaydi', 'Rad etildi'];
-const PLACEMENT_OPTIONS = ['Qabul qilindi', 'Joylashdi', 'Kutilmoqda'];
+const PLACEMENT_OPTIONS = ['Qabul qilindi', 'Joylashdi'];
 
 const PHONE_RE = /^\+998\d{9}$/;
 const PASSPORT_RE = /^[A-Z]{2}\d{7}$/;
@@ -398,9 +390,7 @@ const CreateStudentModal: React.FC<CreateStudentModalProps> = ({ open, onClose, 
       if (key === 'room') {
         if (value) {
           next.is_active = true;
-          if (next.placement_status === 'Qabul qilindi' || next.placement_status === 'Kutilmoqda') {
-            next.placement_status = 'Joylashdi';
-          }
+          next.placement_status = 'Joylashdi';
         }
       }
       return next;
@@ -522,7 +512,6 @@ const CreateStudentModal: React.FC<CreateStudentModalProps> = ({ open, onClose, 
 
       if (files.picture) {
         fd.append('picture', files.picture);
-        fd.append('user_image', files.picture);
       }
       if (files.passport_image_first) {
         fd.append('passport_image_first', files.passport_image_first);
