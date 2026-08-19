@@ -243,7 +243,7 @@ const Profile: React.FC = () => {
           className="relative bg-white dark:bg-surface-900 rounded-3xl border border-surface-200 dark:border-surface-800 shadow-sm overflow-hidden"
         >
           {/* Top Banner Gradient */}
-          <div className="h-32 sm:h-40 bg-gradient-to-r from-brand-700 via-brand-600 to-indigo-700 relative overflow-hidden">
+          <div className="h-32 sm:h-40 bg-brand-800 relative overflow-hidden">
             <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
           </div>
 
@@ -495,7 +495,7 @@ const Profile: React.FC = () => {
             </div>
 
             {/* Quick Admin Permissions Card */}
-            <div className="bg-gradient-to-br from-brand-900 to-surface-900 text-white rounded-3xl p-6 shadow-md space-y-4">
+            <div className="bg-brand-900 text-white rounded-3xl p-6 shadow-sm space-y-4">
               <div className="flex items-center gap-2 text-brand-300">
                 <Briefcase className="w-4 h-4" />
                 <h4 className="text-xs font-bold uppercase tracking-wider">

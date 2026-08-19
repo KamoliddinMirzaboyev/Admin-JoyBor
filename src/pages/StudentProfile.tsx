@@ -190,6 +190,7 @@ const StudentProfile: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // States for file uploads
@@ -229,6 +230,7 @@ const StudentProfile: React.FC = () => {
         course: student.course || '1-kurs',
         gender: student.gender || 'Erkak',
       });
+      setImageLoadFailed(false);
     }
   }, [student]);
 
@@ -345,11 +347,9 @@ const StudentProfile: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-surface-50 dark:bg-surface-950 py-4 sm:py-6 px-1 sm:px-2 flex flex-col items-center">
-        <div className="w-full max-w-4xl bg-white dark:bg-surface-900 rounded-2xl shadow-sm p-2 sm:p-6 md:p-8 border border-surface-200 dark:border-surface-800">
-          <Skeleton className="h-8 w-48 mb-6" />
-          <Skeleton className="h-40 w-full rounded-2xl" count={3} />
-        </div>
+      <div className="w-full max-w-6xl mx-auto bg-white dark:bg-surface-900 rounded-2xl shadow-sm p-4 sm:p-6 md:p-8 border border-surface-200 dark:border-surface-800">
+        <Skeleton className="h-8 w-48 mb-6" />
+        <Skeleton className="h-40 w-full rounded-2xl" count={3} />
       </div>
     );
   }
@@ -369,6 +369,7 @@ const StudentProfile: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       setPictureFile(file);
+      setImageLoadFailed(false);
       const reader = new FileReader();
       reader.onload = () => {
         setImagePreview(reader.result as string);
@@ -581,8 +582,8 @@ const StudentProfile: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface-50 dark:bg-surface-950 py-4 sm:py-6 px-1 sm:px-2 flex flex-col items-center">
-      <div className="w-full max-w-4xl bg-white dark:bg-surface-900 rounded-2xl shadow-sm p-2 sm:p-6 md:p-8 border border-surface-200 dark:border-surface-800">
+    <div className="pb-8">
+      <div className="w-full max-w-6xl mx-auto bg-white dark:bg-surface-900 rounded-2xl shadow-sm p-4 sm:p-6 md:p-8 border border-surface-200 dark:border-surface-800">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
           <BackButton
             label="Orqaga"
@@ -628,14 +629,15 @@ const StudentProfile: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Profil rasmi yoki avatar */}
           <div className="relative">
-            {imagePreview || form.picture ? (
+            {(imagePreview || form.picture) && !imageLoadFailed ? (
               <img
                 src={imagePreview || mediaUrl(form.picture)}
                 alt={form.name}
-                className="w-32 h-32 object-cover rounded-xl border border-surface-200 dark:border-surface-700"
+                onError={() => setImageLoadFailed(true)}
+                className="w-36 h-36 sm:w-44 sm:h-44 object-cover rounded-xl border border-surface-200 dark:border-surface-700"
               />
             ) : (
-              <div className="w-32 h-32 flex items-center justify-center bg-surface-200 dark:bg-surface-800 text-5xl font-bold text-surface-500 dark:text-surface-400 rounded-xl border border-surface-200 dark:border-surface-700">
+              <div className="w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center bg-brand-50 dark:bg-brand-900/20 text-5xl font-bold text-brand-600 dark:text-brand-400 rounded-xl border border-surface-200 dark:border-surface-700">
                 {form.name && form.last_name
                   ? `${form.name[0] || ''}${form.last_name[0] || ''}`
                   : ''}
@@ -670,7 +672,12 @@ const StudentProfile: React.FC = () => {
                 <EditableInput label="Familiya" value={form.last_name} onChange={v => handleChange('last_name', v)} />
                 <EditableInput label="Otasining ismi" value={form.middle_name} onChange={v => handleChange('middle_name', v)} />
                 <EditableInput label="Telefon" value={form.phone} onChange={v => handleChange('phone', v)} />
-                <EditableInput label="JSHSHIR" value={form.jshshir} onChange={v => handleChange('jshshir', v)} />
+                <EditableInput label="Passport ID" value={form.passport || ''} onChange={v => handleChange('passport', v)} />
+                <ReadOnlyInput
+                  label="Jami to'lov"
+                  value={form.payment_summary?.total_amount || form.total_payment}
+                  type="currency"
+                />
               </>
             ) : (
               <>
@@ -678,7 +685,12 @@ const StudentProfile: React.FC = () => {
                 <ReadOnlyInput label="Familiya" value={form.last_name} />
                 <ReadOnlyInput label="Otasining ismi" value={form.middle_name} />
                 <ReadOnlyInput label="Telefon" value={form.phone} />
-                <ReadOnlyInput label="JSHSHIR" value={form.jshshir} />
+                <ReadOnlyInput label="Passport ID" value={form.passport} />
+                <ReadOnlyInput
+                  label="Jami to'lov"
+                  value={form.payment_summary?.total_amount || form.total_payment}
+                  type="currency"
+                />
               </>
             )}
           </div>
@@ -784,8 +796,6 @@ const StudentProfile: React.FC = () => {
                   isDisabled={!form.province}
                 />
               </div>
-              <EditableInput label="Pasport" value={form.passport || ''} onChange={v => handleChange('passport', v)} />
-
               {/* Status Select */}
               <div className="flex flex-col gap-1 w-full">
                 <label className="text-xs text-surface-500 dark:text-surface-400 font-medium mb-1">Holati</label>
@@ -844,11 +854,6 @@ const StudentProfile: React.FC = () => {
                 </div>
               )}
               <ReadOnlyInput label="Qabul qilingan sana" value={form.accepted_date} type="date" />
-              <ReadOnlyInput
-                label="Jami to'lov"
-                value={form.payment_summary?.total_amount || form.total_payment}
-                type="currency"
-              />
             </>
           ) : (
             <>
@@ -861,7 +866,6 @@ const StudentProfile: React.FC = () => {
               <ReadOnlyInput label="Qavat" value={form.floor_name} />
               <ReadOnlyInput label="Viloyat" value={form.province_name} />
               <ReadOnlyInput label="Tuman" value={form.district_name} />
-              <ReadOnlyInput label="Pasport" value={form.passport} />
               <ReadOnlyInput label="Holati" value={form.status} />
               <ReadOnlyInput label="Joylashish holati" value={form.placement_status} />
               <ReadOnlyInput
@@ -875,11 +879,6 @@ const StudentProfile: React.FC = () => {
                 />
               )}
               <ReadOnlyInput label="Qabul qilingan sana" value={form.accepted_date} type="date" />
-              <ReadOnlyInput
-                label="Jami to'lov"
-                value={form.payment_summary?.total_amount || form.total_payment}
-                type="currency"
-              />
             </>
           )}
         </div>
