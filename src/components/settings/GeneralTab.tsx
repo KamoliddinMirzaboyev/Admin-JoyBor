@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   DollarSign,
   Info,
@@ -13,11 +13,13 @@ import {
   Pencil,
   X,
   ExternalLink,
-  CreditCard,
+  Upload,
+  Locate,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '../../utils/formatters';
 import api, { get } from '../../data/api';
+import { mediaUrl } from '../../data/config';
 import type { DormitorySettings } from './types';
 
 interface GeneralTabProps {
@@ -27,39 +29,70 @@ interface GeneralTabProps {
   setEditSection: (section: string | null) => void;
 }
 
-const ADMIN_PROFILE = {
-  id: 1,
-  username: 'dxshadmin',
-  first_name: 'Admin',
-  last_name: 'Adminov',
-  email: 'admin@joybor.uz',
-  phone: '+998901234567',
-  telegram: '@joyboradmin',
-  bio: 'Yotoqxona administratori',
-  avatar: null,
-};
+interface AdminMe {
+  id?: number;
+  phone?: string;
+  telegram?: string;
+  first_name?: string;
+  last_name?: string;
+}
 
-function formatPhoneNumber(value: string) {
-  const numbers = value.replace(/\D/g, '');
-  if (numbers.length === 0) return '+998 ';
+function dormPhone(settings: DormitorySettings): string {
+  return settings.phone_number || settings.phone_numer || '';
+}
 
-  let formattedNumbers = numbers;
-  if (!numbers.startsWith('998') && numbers.startsWith('9')) {
-    formattedNumbers = '998' + numbers;
+function adminIdOf(settings: DormitorySettings): number | undefined {
+  if (typeof settings.admin === 'number') return settings.admin;
+  if (settings.admin && typeof settings.admin === 'object') return settings.admin.id;
+  return undefined;
+}
+
+function fileLabel(url?: string | null): string {
+  if (!url) return '';
+  try {
+    return decodeURIComponent(url.split('?')[0].split('/').pop() || 'shartnoma');
+  } catch {
+    return 'shartnoma';
+  }
+}
+
+function apiErrorMessage(err: unknown): string {
+  const e = err as Error & { response?: { data?: Record<string, unknown> } };
+  const data = e.response?.data;
+  if (data && typeof data === 'object') {
+    const field = Object.entries(data).find(([, value]) => value != null && value !== '');
+    if (field) {
+      const [key, value] = field;
+      const msg = Array.isArray(value) ? String(value[0]) : String(value);
+      if (key !== 'detail' && key !== 'message') return `${key}: ${msg}`;
+      return msg;
+    }
+  }
+  return e.message || 'Saqlashda xatolik yuz berdi';
+}
+
+function formatPhoneNumber(value: string): string {
+  // Strip everything except digits
+  let digits = value.replace(/\D/g, '');
+
+  // If empty, show placeholder
+  if (!digits) return '';
+
+  // If user typed without +998 prefix, remove leading 998 if present
+  // then re-add it during formatting
+  if (digits.startsWith('998')) {
+    digits = digits.slice(3);
   }
 
-  if (formattedNumbers.length >= 12) {
-    return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3, 5)}) ${formattedNumbers.slice(5, 8)} ${formattedNumbers.slice(8, 10)} ${formattedNumbers.slice(10, 12)}`;
-  } else if (formattedNumbers.length >= 10) {
-    return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3, 5)}) ${formattedNumbers.slice(5, 8)} ${formattedNumbers.slice(8, 10)}`;
-  } else if (formattedNumbers.length >= 8) {
-    return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3, 5)}) ${formattedNumbers.slice(5, 8)}`;
-  } else if (formattedNumbers.length >= 5) {
-    return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3, 5)}) ${formattedNumbers.slice(5)}`;
-  } else if (formattedNumbers.length >= 3) {
-    return `+${formattedNumbers.slice(0, 3)} (${formattedNumbers.slice(3)}`;
-  }
-  return `+${formattedNumbers}`;
+  // Limit to 9 digits (Uzbekistan local number)
+  digits = digits.slice(0, 9);
+
+  // Format: +998 (XX) XXX-XX-XX
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return `+998 (${digits}`;
+  if (digits.length <= 5) return `+998 (${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 7) return `+998 (${digits.slice(0, 2)}) ${digits.slice(2, 5)}-${digits.slice(5)}`;
+  return `+998 (${digits.slice(0, 2)}) ${digits.slice(2, 5)}-${digits.slice(5, 7)}-${digits.slice(7)}`;
 }
 
 function cleanPhoneNumber(value: string) {
@@ -67,27 +100,56 @@ function cleanPhoneNumber(value: string) {
 }
 
 async function refetchSettings(): Promise<DormitorySettings> {
-  const data = (await get('/admin/my-dormitories/')) as { results?: DormitorySettings[] } & Partial<DormitorySettings>;
-  return data.results && data.results.length > 0 ? data.results[0] : (data as DormitorySettings);
+  try {
+    return (await get('/admin/my-dormitory/')) as DormitorySettings;
+  } catch {
+    const data = (await get('/admin/my-dormitories/')) as { results?: DormitorySettings[] } & Partial<DormitorySettings>;
+    return data.results && data.results.length > 0 ? data.results[0] : (data as DormitorySettings);
+  }
 }
 
 export default function GeneralTab({ settings, onSettingsUpdate }: GeneralTabProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [adminMe, setAdminMe] = useState<AdminMe | null>(null);
+  const [contractFile, setContractFile] = useState<File | null>(null);
+  const [locating, setLocating] = useState(false);
 
-  // Form State
   const [formData, setFormData] = useState({
     name: settings.name || '',
     address: settings.address || '',
     distance: settings.distance ? String(settings.distance) : '',
-    phone_numer: settings.phone_numer ? formatPhoneNumber(settings.phone_numer) : '+998 ',
+    latitude: settings.latitude != null ? String(settings.latitude) : '',
+    longitude: settings.longitude != null ? String(settings.longitude) : '',
+    phone_number: formatPhoneNumber(dormPhone(settings) || ''),
     link: settings.link || '',
     month_price: settings.month_price ? String(settings.month_price) : '',
     year_price: settings.year_price ? String(settings.year_price) : '',
-    admin_phone: ADMIN_PROFILE.phone ? formatPhoneNumber(ADMIN_PROFILE.phone) : '+998 ',
-    admin_telegram: ADMIN_PROFILE.telegram || '',
+    admin_phone: '',
+    admin_telegram: '',
     description: settings.description || '',
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    get('/me/')
+      .then((data) => {
+        if (cancelled) return;
+        const me = data as AdminMe;
+        setAdminMe(me);
+        setFormData((prev) => ({
+          ...prev,
+          admin_phone: prev.admin_phone || formatPhoneNumber(me.phone || ''),
+          admin_telegram: prev.admin_telegram || me.telegram || '',
+        }));
+      })
+      .catch(() => {
+        /* /me/ ixtiyoriy */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const currentAmenityIds = () =>
     (settings.amenities as Array<{ id?: number } | number>)?.map((a) => (typeof a === 'object' ? a.id : a)) || [];
@@ -97,16 +159,55 @@ export default function GeneralTab({ settings, onSettingsUpdate }: GeneralTabPro
       name: settings.name || '',
       address: settings.address || '',
       distance: settings.distance ? String(settings.distance) : '',
-      phone_numer: settings.phone_numer ? formatPhoneNumber(settings.phone_numer) : '+998 ',
+      latitude: settings.latitude != null ? String(settings.latitude) : '',
+      longitude: settings.longitude != null ? String(settings.longitude) : '',
+      phone_number: formatPhoneNumber(dormPhone(settings) || ''),
       link: settings.link || '',
       month_price: settings.month_price ? String(settings.month_price) : '',
       year_price: settings.year_price ? String(settings.year_price) : '',
-      admin_phone: ADMIN_PROFILE.phone ? formatPhoneNumber(ADMIN_PROFILE.phone) : '+998 ',
-      admin_telegram: ADMIN_PROFILE.telegram || '',
+      admin_phone: formatPhoneNumber(adminMe?.phone || ''),
+      admin_telegram: adminMe?.telegram || '',
       description: settings.description || '',
     });
+    setContractFile(null);
     setIsEditing(false);
     toast.info("Tahrirlash bekor qilindi");
+  };
+
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      toast.error("Brauzeringiz joylashuvni aniqlashni qo'llab-quvvatlamaydi");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setFormData((f) => ({
+          ...f,
+          latitude: String(pos.coords.latitude),
+          longitude: String(pos.coords.longitude),
+        }));
+        setLocating(false);
+        toast.success('Joylashuv aniqlandi');
+      },
+      () => {
+        setLocating(false);
+        toast.error("Joylashuvni aniqlab bo'lmadi. Brauzerga ruxsat bering");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const handleContractChange = (file: File | null) => {
+    if (!file) {
+      setContractFile(null);
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Fayl hajmi 10MB dan oshmasin');
+      return;
+    }
+    setContractFile(file);
   };
 
   const handleSaveAll = async (e: React.FormEvent) => {
@@ -115,45 +216,64 @@ export default function GeneralTab({ settings, onSettingsUpdate }: GeneralTabPro
       toast.error('Yotoqxona nomini kiriting');
       return;
     }
+    if (!formData.address.trim()) {
+      toast.error('Manzilni kiriting');
+      return;
+    }
 
     setLoading(true);
     try {
-      const monthPrice = parseFloat(formData.month_price) || 0;
-      const yearPrice = parseFloat(formData.year_price) || 0;
+      const monthPrice = Math.round(parseFloat(formData.month_price) || 0);
+      const yearPrice = Math.round(parseFloat(formData.year_price) || 0);
       const distance = parseFloat(formData.distance) || 0;
-      const cleanPhone = cleanPhoneNumber(formData.phone_numer);
+      const cleanPhone = cleanPhoneNumber(formData.phone_number);
+      const phoneNumber = cleanPhone.length >= 9 ? `+${cleanPhone}` : '';
 
-      // 1. Update Dormitory
-      await api.updateMyDormitory({
+      const payload: Record<string, unknown> = {
         name: formData.name.trim(),
         address: formData.address.trim(),
         distance,
-        phone_numer: cleanPhone ? `+${cleanPhone}` : '',
         link: formData.link.trim(),
-        latitude: settings.latitude || 0,
-        longitude: settings.longitude || 0,
         description: formData.description.trim(),
         month_price: monthPrice,
         year_price: yearPrice,
-        amenities: currentAmenityIds(),
-      });
+        amenities: currentAmenityIds().filter((id): id is number => typeof id === 'number'),
+      };
+      const lat = parseFloat(formData.latitude);
+      const lng = parseFloat(formData.longitude);
+      if (!isNaN(lat)) payload.latitude = lat;
+      if (!isNaN(lng)) payload.longitude = lng;
+      if (settings.university != null) payload.university = settings.university;
+      const adminId = adminIdOf(settings) ?? adminMe?.id;
+      if (adminId != null) payload.admin = adminId;
+      if (typeof settings.is_active === 'boolean') payload.is_active = settings.is_active;
+      if (cleanPhone.length >= 9 && /^\+?\d{7,15}$/.test(phoneNumber)) {
+        payload.phone_number = phoneNumber;
+      } else {
+        payload.phone_number = '';
+      }
+      if (contractFile) {
+        payload.file = contractFile;
+      }
 
-      // 2. Update Admin Profile
+      await api.updateMyDormitory(payload);
+
       const cleanAdminPhone = cleanPhoneNumber(formData.admin_phone);
       const updateAdmin: Record<string, string> = {};
-      if (cleanAdminPhone) updateAdmin.phone = cleanAdminPhone;
+      // Allow clearing phone by sending empty string
+      updateAdmin.phone = cleanAdminPhone.length >= 9 ? `+${cleanAdminPhone}` : '';
       if (formData.admin_telegram.trim()) updateAdmin.telegram = formData.admin_telegram.trim();
-
       if (Object.keys(updateAdmin).length > 0) {
         await api.updateAdminProfile(updateAdmin);
       }
 
       const updated = await refetchSettings();
       onSettingsUpdate(updated);
+      setContractFile(null);
       setIsEditing(false);
-      toast.success("Barcha sozlamalar muvaffaqiyatli saqlandi");
+      toast.success("Sozlamalar saqlandi");
     } catch (err) {
-      toast.error((err as Error)?.message || 'Saqlashda xatolik yuz berdi');
+      toast.error(apiErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -264,6 +384,41 @@ export default function GeneralTab({ settings, onSettingsUpdate }: GeneralTabPro
                   </div>
                 </div>
 
+                <div className="sm:col-span-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400">
+                      Xarita Koordinatalari (Latitude / Longitude)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleLocateMe}
+                      disabled={locating}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-bold text-brand-600 dark:text-brand-400 hover:text-brand-700 disabled:opacity-50"
+                    >
+                      <Locate className={`w-3.5 h-3.5 ${locating ? 'animate-pulse' : ''}`} />
+                      <span>{locating ? 'Aniqlanmoqda...' : 'Joylashuvni aniqlash'}</span>
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="number"
+                      step="0.000001"
+                      value={formData.latitude}
+                      onChange={(e) => setFormData((f) => ({ ...f, latitude: e.target.value }))}
+                      placeholder="Latitude, masalan: 41.311081"
+                      className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-surface-900 dark:text-white font-medium transition-colors"
+                    />
+                    <input
+                      type="number"
+                      step="0.000001"
+                      value={formData.longitude}
+                      onChange={(e) => setFormData((f) => ({ ...f, longitude: e.target.value }))}
+                      placeholder="Longitude, masalan: 69.240562"
+                      className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-surface-900 dark:text-white font-medium transition-colors"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-surface-600 dark:text-surface-400 mb-1.5">
                     Universitetgacha Masofa (km)
@@ -290,10 +445,11 @@ export default function GeneralTab({ settings, onSettingsUpdate }: GeneralTabPro
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
                     <input
                       type="text"
-                      value={formData.phone_numer}
+                      value={formData.phone_number}
                       onChange={(e) =>
-                        setFormData((f) => ({ ...f, phone_numer: formatPhoneNumber(e.target.value) }))
+                        setFormData((f) => ({ ...f, phone_number: formatPhoneNumber(e.target.value) }))
                       }
+                      placeholder="+998 (90) 123-45-67"
                       className="w-full pl-9 pr-3.5 py-2.5 text-sm bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-surface-900 dark:text-white font-mono transition-colors"
                     />
                   </div>
@@ -346,6 +502,17 @@ export default function GeneralTab({ settings, onSettingsUpdate }: GeneralTabPro
                     <MapPin className="w-4 h-4 text-brand-600 shrink-0" />
                     <span>{settings.address || 'Kiritilmagan'}</span>
                   </div>
+                  {settings.latitude != null && settings.longitude != null && (
+                    <a
+                      href={`https://www.google.com/maps?q=${settings.latitude},${settings.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline mt-2"
+                    >
+                      <Locate className="w-3.5 h-3.5" />
+                      <span>Xaritada ko'rish ({settings.latitude}, {settings.longitude})</span>
+                    </a>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -355,7 +522,7 @@ export default function GeneralTab({ settings, onSettingsUpdate }: GeneralTabPro
                     </p>
                     <div className="flex items-center gap-2 text-sm font-semibold text-surface-900 dark:text-white">
                       <Phone className="w-4 h-4 text-brand-600 shrink-0" />
-                      <span>{settings.phone_numer ? formatPhoneNumber(settings.phone_numer) : 'Kiritilmagan'}</span>
+                      <span>{dormPhone(settings) ? formatPhoneNumber(dormPhone(settings)) : 'Kiritilmagan'}</span>
                     </div>
                   </div>
 
@@ -411,6 +578,69 @@ export default function GeneralTab({ settings, onSettingsUpdate }: GeneralTabPro
               <div className="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/40 border border-surface-100 dark:border-surface-800 text-sm text-surface-700 dark:text-surface-300 leading-relaxed whitespace-pre-wrap min-h-[90px]">
                 {settings.description || "Hozircha yotoqxona tavsifi kiritilmagan. Tahrirlash tugmasini bosib tavsif yozishingiz mumkin."}
               </div>
+            )}
+          </div>
+
+          {/* 3. SHARTNOMA */}
+          <div className="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 p-6 shadow-sm space-y-4">
+            <div className="flex items-center gap-3 border-b border-surface-100 dark:border-surface-800 pb-4">
+              <div className="p-2 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-800/40">
+                <Upload className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-surface-900 dark:text-white">
+                  Shartnoma
+                </h3>
+                <p className="text-xs text-surface-500 dark:text-surface-400">
+                  Yotoqxona shartnomasi (PDF, DOC yoki rasm)
+                </p>
+              </div>
+            </div>
+
+            {isEditing ? (
+              <div className="space-y-3">
+                <label className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl border border-dashed border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/40 cursor-pointer">
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,application/pdf,image/jpeg,image/png"
+                    className="sr-only"
+                    onChange={(e) => handleContractChange(e.target.files?.[0] || null)}
+                  />
+                  <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-600 text-white text-xs font-semibold">
+                    <Upload className="w-4 h-4" />
+                    Fayl tanlash
+                  </span>
+                  <span className="text-sm text-surface-600 dark:text-surface-300 truncate">
+                    {contractFile
+                      ? contractFile.name
+                      : settings.file
+                        ? fileLabel(settings.file)
+                        : 'Fayl tanlanmagan'}
+                  </span>
+                </label>
+                {contractFile && (
+                  <button
+                    type="button"
+                    onClick={() => setContractFile(null)}
+                    className="text-xs font-medium text-danger-600"
+                  >
+                    Tanlovni bekor qilish
+                  </button>
+                )}
+              </div>
+            ) : settings.file ? (
+              <a
+                href={mediaUrl(settings.file)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-surface-200 dark:border-surface-700 text-sm font-semibold text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                <span className="truncate max-w-[240px]">{fileLabel(settings.file)}</span>
+                <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+              </a>
+            ) : (
+              <p className="text-sm text-surface-400">Shartnoma yuklanmagan</p>
             )}
           </div>
         </div>
@@ -551,6 +781,7 @@ export default function GeneralTab({ settings, onSettingsUpdate }: GeneralTabPro
                       onChange={(e) =>
                         setFormData((f) => ({ ...f, admin_phone: formatPhoneNumber(e.target.value) }))
                       }
+                      placeholder="+998 (90) 123-45-67"
                       className="w-full pl-9 pr-3.5 py-2.5 text-sm bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-surface-900 dark:text-white font-mono"
                     />
                   </div>
@@ -581,7 +812,7 @@ export default function GeneralTab({ settings, onSettingsUpdate }: GeneralTabPro
                   </p>
                   <div className="flex items-center gap-2 text-sm font-bold text-surface-900 dark:text-white font-mono">
                     <Phone className="w-4 h-4 text-brand-600 shrink-0" />
-                    <span>{ADMIN_PROFILE.phone ? formatPhoneNumber(ADMIN_PROFILE.phone) : 'Kiritilmagan'}</span>
+                    <span>{adminMe?.phone ? formatPhoneNumber(adminMe.phone) : 'Kiritilmagan'}</span>
                   </div>
                 </div>
 
@@ -591,7 +822,7 @@ export default function GeneralTab({ settings, onSettingsUpdate }: GeneralTabPro
                   </p>
                   <div className="flex items-center gap-2 text-sm font-bold text-surface-900 dark:text-white">
                     <Send className="w-4 h-4 text-sky-500 shrink-0" />
-                    <span>{ADMIN_PROFILE.telegram || 'Kiritilmagan'}</span>
+                    <span>{adminMe?.telegram || 'Kiritilmagan'}</span>
                   </div>
                 </div>
               </div>

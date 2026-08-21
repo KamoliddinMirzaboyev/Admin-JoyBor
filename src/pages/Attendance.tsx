@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Users,
@@ -62,7 +62,23 @@ const Attendance: React.FC = () => {
   const [showAddLeaderModal, setShowAddLeaderModal] = useState(false);
   const [floorLeaders, setFloorLeaders] = useState<FloorLeader[]>([]);
   const [showFloorFilter, setShowFloorFilter] = useState(false);
+  const [floorDropdownPos, setFloorDropdownPos] = useState({ top: 0, left: 0 });
+  const floorFilterBtnRef = useRef<HTMLButtonElement>(null);
   const [showLeadersModal, setShowLeadersModal] = useState(false);
+
+  // Qavat dropdown'ni sahifa emas, viewport'ga nisbatan joylashtiramiz —
+  // shunda u kartaning pastki chegarasida "sig'may qolmaydi"
+  const toggleFloorFilter = () => {
+    if (!showFloorFilter && floorFilterBtnRef.current) {
+      const rect = floorFilterBtnRef.current.getBoundingClientRect();
+      const width = 256; // w-64
+      setFloorDropdownPos({
+        top: rect.bottom + 8,
+        left: Math.min(rect.right - width, window.innerWidth - width - 8),
+      });
+    }
+    setShowFloorFilter((v) => !v);
+  };
 
   // Fetch floors
   const { data: floorsData } = useQuery<Paginated<Floor> | Floor[]>({
@@ -257,7 +273,7 @@ const Attendance: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {floors.map((floor) => {
             const floorRecords = allDailyRecords.filter((record) => record.floor_name === floor.name);
             const hasAttendance = floorRecords.length > 0;
@@ -366,7 +382,8 @@ const Attendance: React.FC = () => {
                 Qavat
               </label>
               <button
-                onClick={() => setShowFloorFilter(!showFloorFilter)}
+                ref={floorFilterBtnRef}
+                onClick={toggleFloorFilter}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm transition-colors duration-150 border shadow-sm h-[44px] ${
                   selectedFloor 
                     ? 'bg-brand-600 text-white border-brand-600 ring-4 ring-brand-500/10' 
@@ -382,11 +399,12 @@ const Attendance: React.FC = () => {
               
               {showFloorFilter && (
                 <>
-                  <div className="fixed inset-0 z-[-1]" onClick={() => setShowFloorFilter(false)} />
-                  <motion.div 
+                  <div className="fixed inset-0 z-[199]" onClick={() => setShowFloorFilter(false)} />
+                  <motion.div
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    className="absolute top-full mt-2 right-0 w-64 bg-white dark:bg-surface-900 rounded-2xl shadow-sm border border-surface-100 dark:border-surface-800 overflow-hidden z-[101] p-2"
+                    style={{ top: floorDropdownPos.top, left: floorDropdownPos.left }}
+                    className="fixed w-64 max-h-[70vh] bg-white dark:bg-surface-900 rounded-2xl shadow-lg border border-surface-100 dark:border-surface-800 overflow-hidden z-[200] p-2"
                   >
                     <button
                       onClick={() => {

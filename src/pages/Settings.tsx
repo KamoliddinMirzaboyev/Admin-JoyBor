@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Info, ListChecks, FileImage, School } from 'lucide-react';
+import { Info, ListChecks, FileImage, School, CreditCard } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useSEO } from '../hooks/useSEO';
 import { get } from '../data/api';
@@ -7,6 +7,7 @@ import GeneralTab from '../components/settings/GeneralTab';
 import AmenitiesTab from '../components/settings/AmenitiesTab';
 import RulesTab from '../components/settings/RulesTab';
 import ImagesTab from '../components/settings/ImagesTab';
+import TariffsTab from '../components/settings/TariffsTab';
 import Skeleton from '../components/UI/Skeleton';
 import type { DormitorySettings } from '../components/settings/types';
 
@@ -15,6 +16,7 @@ const TABS = [
   { id: 'amenities', label: 'Qulayliklar', icon: ListChecks },
   { id: 'rules', label: 'Tartib Qoidalari', icon: ListChecks },
   { id: 'images', label: 'Yotoqxona Suratlari', icon: FileImage },
+  { id: 'tariffs', label: 'Tariflar', icon: CreditCard },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -33,8 +35,13 @@ const Settings: React.FC = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const data = (await get('/admin/my-dormitories/')) as { results?: DormitorySettings[] } & Partial<DormitorySettings>;
-        const dormitory = data.results && data.results.length > 0 ? data.results[0] : (data as DormitorySettings);
+        let dormitory: DormitorySettings | null = null;
+        try {
+          dormitory = (await get('/admin/my-dormitory/')) as DormitorySettings;
+        } catch {
+          const data = (await get('/admin/my-dormitories/')) as { results?: DormitorySettings[] } & Partial<DormitorySettings>;
+          dormitory = data.results && data.results.length > 0 ? data.results[0] : (data as DormitorySettings);
+        }
         setSettings(dormitory);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Xatolik yuz berdi');
@@ -166,6 +173,8 @@ const Settings: React.FC = () => {
           setEditSection={setEditSection}
         />
       )}
+
+      {activeTab === 'tariffs' && <TariffsTab settings={settings} />}
     </motion.div>
   );
 };

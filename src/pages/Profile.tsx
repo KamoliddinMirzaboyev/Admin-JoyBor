@@ -200,10 +200,10 @@ const Profile: React.FC = () => {
   if (isLoading) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full space-y-6">
-        <Skeleton className="h-56 w-full rounded-3xl" />
+        <Skeleton className="h-56 w-full rounded-lg" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Skeleton className="h-72 w-full rounded-3xl" />
-          <Skeleton className="h-72 w-full rounded-3xl" />
+          <Skeleton className="h-72 w-full rounded-lg" />
+          <Skeleton className="h-72 w-full rounded-lg" />
         </div>
       </div>
     );
@@ -212,7 +212,7 @@ const Profile: React.FC = () => {
   if (error || !admin) {
     return (
       <div className="p-8 max-w-lg mx-auto text-center space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-danger-50 text-danger-600 flex items-center justify-center mx-auto">
+        <div className="w-12 h-12 rounded-lg bg-danger-50 text-danger-600 flex items-center justify-center mx-auto">
           <X className="w-6 h-6" />
         </div>
         <h3 className="text-lg font-bold text-surface-900 dark:text-white">
@@ -221,7 +221,7 @@ const Profile: React.FC = () => {
         <p className="text-sm text-surface-500">{error || "Kutilmagan xatolik yuz berdi"}</p>
         <button
           onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold"
+          className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-semibold"
         >
           Qayta urinish
         </button>
@@ -233,35 +233,28 @@ const Profile: React.FC = () => {
   const initials = (admin.first_name?.[0] || admin.username?.[0] || 'A').toUpperCase() + (admin.last_name?.[0] || '').toUpperCase();
 
   return (
-    <div className="min-h-screen bg-surface-50 dark:bg-surface-950 text-surface-900 dark:text-surface-100 p-4 sm:p-6 lg:p-8 flex flex-col">
+    <div className="text-surface-900 dark:text-surface-100 p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto w-full space-y-6">
-        {/* Executive Profile Header Banner */}
+        {/* Profile Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="relative bg-white dark:bg-surface-900 rounded-3xl border border-surface-200 dark:border-surface-800 shadow-sm overflow-hidden"
+          className="relative bg-white dark:bg-surface-900 rounded-lg border border-surface-200 dark:border-surface-800 shadow-sm overflow-hidden"
         >
-          {/* Top Banner Gradient */}
-          <div className="h-32 sm:h-40 bg-brand-800 relative overflow-hidden">
-            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
-          </div>
-
-          <div className="px-6 sm:px-8 pb-6 pt-0 relative">
-            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 -mt-16 sm:-mt-20">
+          <div className="px-6 sm:px-8 py-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               {/* Avatar + Info */}
-              <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 text-center sm:text-left w-full sm:w-auto">
                 <div className="relative">
-                  <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-brand-600 flex items-center justify-center text-white font-extrabold text-3xl shadow-lg border-4 border-white dark:border-surface-900 overflow-hidden">
+                  <div className="w-20 h-20 rounded-lg bg-brand-600 flex items-center justify-center text-white font-extrabold text-2xl overflow-hidden border border-surface-200 dark:border-surface-700">
                     {admin.image ? (
                       <img src={admin.image} alt={fullName} className="w-full h-full object-cover" />
                     ) : (
                       <span>{initials}</span>
                     )}
                   </div>
-                  <div className="absolute bottom-2 right-2 w-5 h-5 bg-success-500 rounded-full border-2 border-white dark:border-surface-900 shadow-sm flex items-center justify-center" title="Faol holatda">
-                    <div className="w-2 h-2 bg-white rounded-full" />
-                  </div>
+                  <div className="absolute bottom-1 right-1 w-4 h-4 bg-success-500 rounded-full border-2 border-white dark:border-surface-900 shadow-sm" title="Faol holatda" />
                 </div>
 
                 <div className="space-y-1 mt-2 sm:mt-0">
@@ -289,21 +282,21 @@ const Profile: React.FC = () => {
               <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 w-full sm:w-auto pt-2 sm:pt-0">
                 <button
                   onClick={() => setShowEditModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all duration-150 active:scale-95"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-all duration-150 active:scale-95"
                 >
                   <UserCog className="w-4 h-4" />
                   <span>Tahrirlash</span>
                 </button>
                 <button
                   onClick={() => setShowPasswordForm(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-surface-100 dark:bg-surface-800 text-surface-800 dark:text-surface-200 hover:bg-surface-200 dark:hover:bg-surface-700 border border-surface-200 dark:border-surface-700 rounded-xl text-sm font-semibold transition-all duration-150 active:scale-95"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-surface-100 dark:bg-surface-800 text-surface-800 dark:text-surface-200 hover:bg-surface-200 dark:hover:bg-surface-700 border border-surface-200 dark:border-surface-700 rounded-lg text-sm font-semibold transition-all duration-150 active:scale-95"
                 >
                   <KeyRound className="w-4 h-4" />
                   <span>Parol</span>
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/40 border border-danger-200 dark:border-danger-900/60 rounded-xl text-sm font-semibold transition-all duration-150 active:scale-95"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/40 border border-danger-200 dark:border-danger-900/60 rounded-lg text-sm font-semibold transition-all duration-150 active:scale-95"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Chiqish</span>
@@ -318,10 +311,10 @@ const Profile: React.FC = () => {
           {/* Left Column: Personal and Contact Details */}
           <div className="lg:col-span-8 space-y-6">
             {/* Shaxsiy Ma'lumotlar Card */}
-            <div className="bg-white dark:bg-surface-900 rounded-3xl border border-surface-200 dark:border-surface-800 p-6 sm:p-7 shadow-sm space-y-6">
+            <div className="bg-white dark:bg-surface-900 rounded-lg border border-surface-200 dark:border-surface-800 p-6 sm:p-7 shadow-sm space-y-6">
               <div className="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 pb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60">
+                  <div className="w-8 h-8 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60">
                     <User className="w-4 h-4" />
                   </div>
                   <div>
@@ -342,7 +335,7 @@ const Profile: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-3.5 rounded-2xl bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60">
+                <div className="p-3.5 rounded-lg bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60">
                   <span className="text-xs font-semibold uppercase tracking-wider text-surface-500">
                     Ism
                   </span>
@@ -351,7 +344,7 @@ const Profile: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60">
+                <div className="p-3.5 rounded-lg bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60">
                   <span className="text-xs font-semibold uppercase tracking-wider text-surface-500">
                     Familiya
                   </span>
@@ -360,7 +353,7 @@ const Profile: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60">
+                <div className="p-3.5 rounded-lg bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60">
                   <span className="text-xs font-semibold uppercase tracking-wider text-surface-500">
                     Foydalanuvchi nomi
                   </span>
@@ -369,7 +362,7 @@ const Profile: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60">
+                <div className="p-3.5 rounded-lg bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60">
                   <span className="text-xs font-semibold uppercase tracking-wider text-surface-500">
                     Tug'ilgan sana
                   </span>
@@ -378,7 +371,7 @@ const Profile: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="sm:col-span-2 p-3.5 rounded-2xl bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60">
+                <div className="sm:col-span-2 p-3.5 rounded-lg bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60">
                   <span className="text-xs font-semibold uppercase tracking-wider text-surface-500">
                     Manzil
                   </span>
@@ -387,7 +380,7 @@ const Profile: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="sm:col-span-2 p-3.5 rounded-2xl bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60">
+                <div className="sm:col-span-2 p-3.5 rounded-lg bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60">
                   <span className="text-xs font-semibold uppercase tracking-wider text-surface-500">
                     Bio / Ma'lumot
                   </span>
@@ -399,10 +392,10 @@ const Profile: React.FC = () => {
             </div>
 
             {/* Aloqa Ma'lumotlari Card */}
-            <div className="bg-white dark:bg-surface-900 rounded-3xl border border-surface-200 dark:border-surface-800 p-6 sm:p-7 shadow-sm space-y-6">
+            <div className="bg-white dark:bg-surface-900 rounded-lg border border-surface-200 dark:border-surface-800 p-6 sm:p-7 shadow-sm space-y-6">
               <div className="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 pb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-info-50 dark:bg-info-950/60 text-info-600 flex items-center justify-center border border-info-200/60 dark:border-info-800/60">
+                  <div className="w-8 h-8 rounded-lg bg-info-50 dark:bg-info-950/60 text-info-600 flex items-center justify-center border border-info-200/60 dark:border-info-800/60">
                     <Phone className="w-4 h-4" />
                   </div>
                   <div>
@@ -417,8 +410,8 @@ const Profile: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-4 rounded-2xl bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60 flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-brand-50 dark:bg-brand-900/40 text-brand-600 flex items-center justify-center flex-shrink-0">
+                <div className="p-4 rounded-lg bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-900/40 text-brand-600 flex items-center justify-center flex-shrink-0">
                     <Mail className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
@@ -429,8 +422,8 @@ const Profile: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60 flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-success-50 dark:bg-success-900/40 text-success-600 flex items-center justify-center flex-shrink-0">
+                <div className="p-4 rounded-lg bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-success-50 dark:bg-success-900/40 text-success-600 flex items-center justify-center flex-shrink-0">
                     <Phone className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
@@ -441,8 +434,8 @@ const Profile: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60 flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-info-50 dark:bg-info-900/40 text-info-600 flex items-center justify-center flex-shrink-0">
+                <div className="p-4 rounded-lg bg-surface-50 dark:bg-surface-800/40 border border-surface-200/60 dark:border-surface-700/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-info-50 dark:bg-info-900/40 text-info-600 flex items-center justify-center flex-shrink-0">
                     <MessageCircle className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
@@ -459,9 +452,9 @@ const Profile: React.FC = () => {
           {/* Right Column: Security & Role Cards */}
           <div className="lg:col-span-4 space-y-6">
             {/* Account & Security Card */}
-            <div className="bg-white dark:bg-surface-900 rounded-3xl border border-surface-200 dark:border-surface-800 p-6 shadow-sm space-y-4">
+            <div className="bg-white dark:bg-surface-900 rounded-lg border border-surface-200 dark:border-surface-800 p-6 shadow-sm space-y-4">
               <div className="flex items-center gap-2.5 border-b border-surface-100 dark:border-surface-800 pb-3.5">
-                <div className="w-8 h-8 rounded-xl bg-success-50 dark:bg-success-950/60 text-success-600 flex items-center justify-center border border-success-200/60 dark:border-success-800/60">
+                <div className="w-8 h-8 rounded-lg bg-success-50 dark:bg-success-950/60 text-success-600 flex items-center justify-center border border-success-200/60 dark:border-success-800/60">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <h3 className="font-bold text-surface-900 dark:text-white text-base">
@@ -470,15 +463,15 @@ const Profile: React.FC = () => {
               </div>
 
               <div className="space-y-3 text-xs">
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-surface-50 dark:bg-surface-800/40">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-surface-50 dark:bg-surface-800/40">
                   <span className="text-surface-600 dark:text-surface-400">Hisob turi</span>
                   <span className="font-bold text-surface-900 dark:text-white">Admin (JoyBor)</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-surface-50 dark:bg-surface-800/40">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-surface-50 dark:bg-surface-800/40">
                   <span className="text-surface-600 dark:text-surface-400">Autentifikatsiya</span>
                   <span className="font-bold text-success-600">Faol sessiya</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-surface-50 dark:bg-surface-800/40">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-surface-50 dark:bg-surface-800/40">
                   <span className="text-surface-600 dark:text-surface-400">Parol himoyasi</span>
                   <span className="font-bold text-brand-600">O'rnatilgan</span>
                 </div>
@@ -487,7 +480,7 @@ const Profile: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowPasswordForm(true)}
-                className="w-full py-2.5 px-4 rounded-xl bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-800 dark:text-surface-200 text-xs font-bold transition-colors flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-4 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-800 dark:text-surface-200 text-xs font-bold transition-colors flex items-center justify-center gap-2"
               >
                 <KeyRound className="w-3.5 h-3.5" />
                 <span>Parolni yangilash</span>
@@ -495,7 +488,7 @@ const Profile: React.FC = () => {
             </div>
 
             {/* Quick Admin Permissions Card */}
-            <div className="bg-brand-900 text-white rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="bg-brand-900 text-white rounded-lg p-6 shadow-sm space-y-4">
               <div className="flex items-center gap-2 text-brand-300">
                 <Briefcase className="w-4 h-4" />
                 <h4 className="text-xs font-bold uppercase tracking-wider">
@@ -539,12 +532,12 @@ const Profile: React.FC = () => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.96, opacity: 0, y: 15 }}
               transition={{ duration: 0.2 }}
-              className="relative bg-white dark:bg-surface-900 w-full max-w-2xl rounded-3xl shadow-xl border border-surface-200 dark:border-surface-800 overflow-hidden my-8 z-10"
+              className="relative bg-white dark:bg-surface-900 w-full max-w-2xl rounded-lg shadow-xl border border-surface-200 dark:border-surface-800 overflow-hidden my-8 z-10"
             >
               {/* Modal Header */}
               <div className="p-6 border-b border-surface-100 dark:border-surface-800 flex items-center justify-between bg-surface-50/50 dark:bg-surface-800/30">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60">
+                  <div className="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60">
                     <UserCog className="w-5 h-5" />
                   </div>
                   <div>
@@ -558,7 +551,7 @@ const Profile: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="w-8 h-8 rounded-xl flex items-center justify-center text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -567,8 +560,8 @@ const Profile: React.FC = () => {
               {/* Form */}
               <form onSubmit={handleEditSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
                 {/* Photo Upload */}
-                <div className="flex items-center gap-4 p-4 rounded-2xl bg-surface-50 dark:bg-surface-800/40 border border-surface-200 dark:border-surface-700">
-                  <div className="relative w-16 h-16 rounded-2xl bg-brand-600 text-white flex items-center justify-center font-bold text-xl overflow-hidden flex-shrink-0 shadow-sm">
+                <div className="flex items-center gap-4 p-4 rounded-lg bg-surface-50 dark:bg-surface-800/40 border border-surface-200 dark:border-surface-700">
+                  <div className="relative w-16 h-16 rounded-lg bg-brand-600 text-white flex items-center justify-center font-bold text-xl overflow-hidden flex-shrink-0 shadow-sm">
                     {photoPreview ? (
                       <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
@@ -603,7 +596,7 @@ const Profile: React.FC = () => {
                       value={editForm.first_name}
                       onChange={handleEditChange}
                       placeholder="Ism"
-                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-xl text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-lg text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
                     />
                   </div>
 
@@ -616,7 +609,7 @@ const Profile: React.FC = () => {
                       value={editForm.last_name}
                       onChange={handleEditChange}
                       placeholder="Familiya"
-                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-xl text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-lg text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
                     />
                   </div>
 
@@ -630,7 +623,7 @@ const Profile: React.FC = () => {
                       value={editForm.email}
                       onChange={handleEditChange}
                       placeholder="admin@joybor.uz"
-                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-xl text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-lg text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
                     />
                   </div>
 
@@ -643,7 +636,7 @@ const Profile: React.FC = () => {
                       value={editForm.phone}
                       onChange={handleEditChange}
                       placeholder="+998 90 123 45 67"
-                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-xl text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-lg text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
                     />
                   </div>
 
@@ -656,7 +649,7 @@ const Profile: React.FC = () => {
                       value={editForm.telegram}
                       onChange={handleEditChange}
                       placeholder="@username"
-                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-xl text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-lg text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
                     />
                   </div>
 
@@ -669,7 +662,7 @@ const Profile: React.FC = () => {
                       type="date"
                       value={editForm.birth_date}
                       onChange={handleEditChange}
-                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-xl text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-lg text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
                     />
                   </div>
 
@@ -682,7 +675,7 @@ const Profile: React.FC = () => {
                       value={editForm.address}
                       onChange={handleEditChange}
                       placeholder="Toshkent shahar, Yunusobod..."
-                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-xl text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-lg text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
                     />
                   </div>
 
@@ -696,7 +689,7 @@ const Profile: React.FC = () => {
                       value={editForm.bio}
                       onChange={handleEditChange}
                       placeholder="O'zingiz haqingizda qisqacha..."
-                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-xl text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all resize-none"
+                      className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-lg text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all resize-none"
                     />
                   </div>
                 </div>
@@ -706,14 +699,14 @@ const Profile: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowEditModal(false)}
-                    className="px-5 py-2.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-100 dark:bg-surface-800 text-surface-700 dark:text-surface-300 text-sm font-semibold hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors"
+                    className="px-5 py-2.5 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-100 dark:bg-surface-800 text-surface-700 dark:text-surface-300 text-sm font-semibold hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors"
                   >
                     Bekor qilish
                   </button>
                   <button
                     type="submit"
                     disabled={isUpdating}
-                    className="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-sm transition-all duration-150 disabled:opacity-50 inline-flex items-center gap-2"
+                    className="px-6 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-sm transition-all duration-150 disabled:opacity-50 inline-flex items-center gap-2"
                   >
                     {isUpdating ? (
                       <>
@@ -748,11 +741,11 @@ const Profile: React.FC = () => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.96, opacity: 0, y: 15 }}
               transition={{ duration: 0.2 }}
-              className="relative bg-white dark:bg-surface-900 w-full max-w-md rounded-3xl shadow-xl border border-surface-200 dark:border-surface-800 overflow-hidden z-10 p-6 space-y-5"
+              className="relative bg-white dark:bg-surface-900 w-full max-w-md rounded-lg shadow-xl border border-surface-200 dark:border-surface-800 overflow-hidden z-10 p-6 space-y-5"
             >
               <div className="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60">
+                  <div className="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60">
                     <KeyRound className="w-5 h-5" />
                   </div>
                   <div>
@@ -766,14 +759,14 @@ const Profile: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setShowPasswordForm(false)}
-                  className="w-8 h-8 rounded-xl flex items-center justify-center text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {passwordError && (
-                <div className="p-3 rounded-xl bg-danger-50 text-danger-700 text-xs">
+                <div className="p-3 rounded-lg bg-danger-50 text-danger-700 text-xs">
                   {passwordError}
                 </div>
               )}
@@ -790,7 +783,7 @@ const Profile: React.FC = () => {
                       onChange={(e) => setOldPassword(e.target.value)}
                       placeholder="••••••••"
                       required
-                      className="w-full pl-3.5 pr-10 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-xl text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
+                      className="w-full pl-3.5 pr-10 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-lg text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
                     />
                     <button
                       type="button"
@@ -813,7 +806,7 @@ const Profile: React.FC = () => {
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Kamida 6 ta belgi"
                       required
-                      className="w-full pl-3.5 pr-10 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-xl text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
+                      className="w-full pl-3.5 pr-10 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-lg text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
                     />
                     <button
                       type="button"
@@ -836,7 +829,7 @@ const Profile: React.FC = () => {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Parolni qayta kiriting"
                       required
-                      className="w-full pl-3.5 pr-10 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-xl text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
+                      className="w-full pl-3.5 pr-10 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-lg text-surface-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
                     />
                     <button
                       type="button"
@@ -852,14 +845,14 @@ const Profile: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowPasswordForm(false)}
-                    className="px-4 py-2.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-100 dark:bg-surface-800 text-surface-700 dark:text-surface-300 text-xs font-semibold hover:bg-surface-200"
+                    className="px-4 py-2.5 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-100 dark:bg-surface-800 text-surface-700 dark:text-surface-300 text-xs font-semibold hover:bg-surface-200"
                   >
                     Bekor qilish
                   </button>
                   <button
                     type="submit"
                     disabled={isChangingPass}
-                    className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50"
+                    className="px-5 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50"
                   >
                     {isChangingPass ? 'Saqlanmoqda...' : 'Parolni saqlash'}
                   </button>

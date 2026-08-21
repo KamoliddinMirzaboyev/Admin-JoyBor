@@ -28,7 +28,38 @@ export interface DormitorySettings {
   admin_name?: string;
   images?: DormitoryImage[];
   phone_numer?: string;
+  phone_number?: string;
+  file?: string | null;
   link?: string;
+}
+
+export interface TariffPlan {
+  id: number;
+  name: string;
+  subtitle: string;
+  badge?: string;
+  min_beds: number;
+  max_beds: number;
+  month_price: number;
+  year_price: number;
+  yearly_discount_percent: number;
+  features: string[];
+  is_popular: boolean;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface DormitoryPayment {
+  id: number;
+  dormitory: number;
+  tariff?: number | null;
+  period: 'month' | 'year';
+  amount: number;
+  receipt: string;
+  comment?: string;
+  admin_comment?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  created_at?: string;
 }
 
 export interface Amenity {

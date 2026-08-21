@@ -382,6 +382,14 @@ export const api = {
     return patch('/admin/my-dormitory/', formData);
   },
 
+  // Platforma tariflari (SaaS rejalar)
+  getTariffs: () => get('/tariffs/'),
+
+  // Obuna to'lovlari (yotoqxonaning SaaS tarifiga to'lovi, chek bilan)
+  getDormitoryPayments: (params?: { status?: string; period?: string; page?: number }) =>
+    get(`/dormitory-payments/${qs(params)}`),
+  createDormitoryPayment: (data: FormData) => post('/dormitory-payments/', data),
+
   // Amenities
   getAmenities: () => get('/amenities/'),
   createAmenity: (data: { name: string; is_active?: boolean }) => post('/amenities/', data),

@@ -17,6 +17,7 @@ import {
   FileText,
   ShieldCheck,
   Upload,
+  Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -70,7 +71,7 @@ interface StaffFormData {
 const emptyForm: StaffFormData = {
   name: '',
   last_name: '',
-  position: ROLES_OPTIONS[0].value,
+  position: '',
   phone: '+998 ',
   salary: '',
   hired_date: new Date().toISOString().split('T')[0],
@@ -81,8 +82,9 @@ const emptyForm: StaffFormData = {
 
 // Format phone for display: +998 (XX) XXX-XX-XX
 const formatPhoneDisplay = (val: string) => {
-  const digits = val.replace(/\D/g, '');
-  const d = digits.startsWith('998') ? digits.slice(3) : digits;
+  const raw = val.replace(/\D/g, '');
+  const digits = raw.startsWith('998') ? raw.slice(3) : raw.length <= 3 ? '' : raw;
+  const d = digits.slice(0, 9);
   if (!d) return '+998';
   let formatted = '+998';
   if (d.length > 0) formatted += ' (' + d.slice(0, 2);
@@ -92,9 +94,13 @@ const formatPhoneDisplay = (val: string) => {
   return formatted;
 };
 
+// 1 000 000 kabi bo'shliq bilan ajratilgan format ('uz-UZ' ba'zi muhitlarda vergul bilan qaytadi)
+const formatSom = (val: number) => Number(val || 0).toLocaleString('uz-UZ').replace(/,/g, ' ');
+
 const Staff: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editStaff, setEditStaff] = useState<StaffMember | null>(null);
+  const [viewStaff, setViewStaff] = useState<StaffMember | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -125,6 +131,8 @@ const Staff: React.FC = () => {
   const totalStaffCount = staffList.length;
   const activeStaffCount = staffList.filter((s) => s.is_active).length;
   const totalSalarySum = staffList.reduce((acc, curr) => acc + (Number(curr.salary) || 0), 0);
+  // Lavozim endi erkin matn — filtrni haqiqiy ma'lumotdagi lavozimlardan yasaymiz
+  const uniquePositions = Array.from(new Set(staffList.map((s) => s.position).filter(Boolean)));
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
@@ -137,7 +145,16 @@ const Staff: React.FC = () => {
         setPhotoPreview(URL.createObjectURL(file));
       }
     } else if (name === 'phone') {
-      setFormData((prev) => ({ ...prev, phone: formatPhoneDisplay(value) }));
+      setFormData((prev) => {
+        // Formatlash belgilarini (bo'shliq, qavs, tire) o'chirish raqamni o'zgartirmaydi —
+        // shu holatda oxirgi raqamni ham olib tashlaymiz, aks holda o'chirish ishlamay qoladi
+        let digits = value.replace(/\D/g, '');
+        const prevDigits = prev.phone.replace(/\D/g, '');
+        if (value.length < prev.phone.length && digits === prevDigits && digits.length > 0) {
+          digits = digits.slice(0, -1);
+        }
+        return { ...prev, phone: formatPhoneDisplay(digits) };
+      });
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -287,7 +304,7 @@ const Staff: React.FC = () => {
       render: (value: unknown) => (
         <div className="flex flex-col">
           <span className="text-sm font-semibold text-surface-900 dark:text-white">
-            {Number(value || 0).toLocaleString('uz-UZ')}
+            {formatSom(Number(value))}
           </span>
           <span className="text-[10px] text-surface-400 font-medium uppercase">so'm / oy</span>
         </div>
@@ -332,6 +349,16 @@ const Staff: React.FC = () => {
           <button
             onClick={(e) => {
               e.stopPropagation();
+              setViewStaff(row as unknown as StaffMember);
+            }}
+            className="p-1.5 text-surface-600 dark:text-surface-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors border border-surface-200 dark:border-surface-700"
+            title="Ko'rish"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
               handleEdit(row as unknown as StaffMember);
             }}
             className="p-1.5 text-surface-600 dark:text-surface-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors border border-surface-200 dark:border-surface-700"
@@ -355,9 +382,9 @@ const Staff: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-surface-50 dark:bg-surface-950 text-surface-900 dark:text-surface-100 flex flex-col">
+    <div className="text-surface-900 dark:text-surface-100">
       {/* Top Header Area */}
-      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full flex-shrink-0 space-y-5">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/60 border border-brand-200/60 dark:border-brand-800/40 text-brand-600 dark:text-brand-400 text-xs font-semibold mb-1.5">
@@ -383,7 +410,7 @@ const Staff: React.FC = () => {
 
         {/* Summary Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 p-4 shadow-sm flex items-center justify-between">
+          <div className="bg-white dark:bg-surface-900 rounded-lg border border-surface-200 dark:border-surface-800 p-4 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-[11px] font-bold text-surface-500 uppercase tracking-wider">
                 Jami xodimlar
@@ -397,7 +424,7 @@ const Staff: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 p-4 shadow-sm flex items-center justify-between">
+          <div className="bg-white dark:bg-surface-900 rounded-lg border border-surface-200 dark:border-surface-800 p-4 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-[11px] font-bold text-surface-500 uppercase tracking-wider">
                 Faol (Ishda)
@@ -411,13 +438,13 @@ const Staff: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 p-4 shadow-sm flex items-center justify-between">
+          <div className="bg-white dark:bg-surface-900 rounded-lg border border-surface-200 dark:border-surface-800 p-4 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-[11px] font-bold text-surface-500 uppercase tracking-wider">
                 Oylik maosh fondi
               </p>
               <p className="text-2xl font-bold text-surface-900 dark:text-white mt-1">
-                {totalSalarySum.toLocaleString('uz-UZ')} <span className="text-xs font-normal text-surface-400">so'm</span>
+                {formatSom(totalSalarySum)} <span className="text-xs font-normal text-surface-400">so'm</span>
               </p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-info-50 dark:bg-info-950/60 text-info-600 flex items-center justify-center border border-info-200/60 dark:border-info-800/40">
@@ -427,7 +454,7 @@ const Staff: React.FC = () => {
         </div>
 
         {/* Filter Toolbar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-surface-900 p-3 rounded-xl border border-surface-200 dark:border-surface-800 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-surface-900 p-3 rounded-lg border border-surface-200 dark:border-surface-800 shadow-sm">
           <div className="flex flex-wrap items-center gap-2 flex-1">
             <div className="relative flex-1 sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
@@ -456,9 +483,9 @@ const Staff: React.FC = () => {
                 className="pl-9 pr-8 py-2 bg-surface-50 dark:bg-surface-800/70 border border-surface-200 dark:border-surface-700 rounded-lg text-sm focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none transition-colors appearance-none cursor-pointer"
               >
                 <option value="">Barcha lavozimlar</option>
-                {ROLES_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
+                {uniquePositions.map((pos) => (
+                  <option key={pos} value={pos}>
+                    {ROLES_MAP[pos] || pos}
                   </option>
                 ))}
               </select>
@@ -468,14 +495,14 @@ const Staff: React.FC = () => {
       </div>
 
       {/* Main Table Area */}
-      <div className="flex-1 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full pb-12">
+      <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full pb-12">
         {isLoading ? (
           <div className="space-y-3">
             <Skeleton className="h-10 w-full rounded-lg" />
-            <Skeleton className="h-64 w-full rounded-xl" />
+            <Skeleton className="h-64 w-full rounded-lg" />
           </div>
         ) : staffList.length === 0 ? (
-          <div className="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 shadow-sm p-8 text-center">
+          <div className="bg-white dark:bg-surface-900 rounded-lg border border-surface-200 dark:border-surface-800 shadow-sm p-8 text-center">
             <EmptyState
               icon={Users}
               title="Xodimlar topilmadi"
@@ -490,7 +517,7 @@ const Staff: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-surface-900 rounded-lg border border-surface-200 dark:border-surface-800 shadow-sm overflow-hidden">
             <DataTable
               data={staffList as unknown as Record<string, unknown>[]}
               columns={columns}
@@ -518,12 +545,12 @@ const Staff: React.FC = () => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.98, opacity: 0, y: 10 }}
               transition={{ duration: 0.15 }}
-              className="relative bg-white dark:bg-surface-900 w-full max-w-3xl rounded-xl shadow-xl border border-surface-200 dark:border-surface-800 overflow-hidden my-8 z-10"
+              className="relative bg-white dark:bg-surface-900 w-full max-w-3xl rounded-lg shadow-xl border border-surface-200 dark:border-surface-800 overflow-hidden my-8 z-10"
             >
               {/* Modal Header */}
               <div className="p-5 sm:p-6 border-b border-surface-100 dark:border-surface-800 flex items-center justify-between bg-surface-50 dark:bg-surface-800/40">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60">
+                  <div className="w-11 h-11 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-200/60 dark:border-brand-800/60">
                     {editStaff ? <Edit2 className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
                   </div>
                   <div>
@@ -545,7 +572,8 @@ const Staff: React.FC = () => {
               </div>
 
               {/* Modal Body / Form */}
-              <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-7 max-h-[75vh] overflow-y-auto">
+              <form onSubmit={handleSubmit} className="flex flex-col max-h-[75vh]">
+              <div className="p-6 sm:p-8 space-y-7 overflow-y-auto">
                 {/* Section: Shaxsiy ma'lumotlar */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-surface-800 dark:text-surface-100">
@@ -632,18 +660,22 @@ const Staff: React.FC = () => {
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-surface-400">
                           <Briefcase className="w-4 h-4" />
                         </div>
-                        <select
+                        <input
+                          required
+                          type="text"
                           name="position"
+                          list="position-suggestions"
+                          maxLength={20}
                           value={formData.position}
                           onChange={handleInputChange}
-                          className="w-full pl-10 pr-8 py-3 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-lg text-surface-900 dark:text-white text-sm focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none transition-colors cursor-pointer"
-                        >
+                          placeholder="Masalan: Farrosh, Santexnik"
+                          className="w-full pl-10 pr-3.5 py-3 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-lg text-surface-900 dark:text-white placeholder-surface-400 text-sm focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none transition-colors"
+                        />
+                        <datalist id="position-suggestions">
                           {ROLES_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </option>
+                            <option key={opt.value} value={opt.label} />
                           ))}
-                        </select>
+                        </datalist>
                       </div>
                     </div>
 
@@ -696,7 +728,7 @@ const Staff: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     {/* Photo Upload */}
-                    <div className="rounded-xl border border-dashed border-surface-300 dark:border-surface-700 p-4 bg-surface-50 dark:bg-surface-800/30 flex items-center gap-4">
+                    <div className="rounded-lg border border-dashed border-surface-300 dark:border-surface-700 p-4 bg-surface-50 dark:bg-surface-800/30 flex items-center gap-4">
                       {photoPreview ? (
                         <img
                           src={photoPreview}
@@ -727,7 +759,7 @@ const Staff: React.FC = () => {
                     </div>
 
                     {/* Document Upload */}
-                    <div className="rounded-xl border border-dashed border-surface-300 dark:border-surface-700 p-4 bg-surface-50 dark:bg-surface-800/30 flex items-center gap-4">
+                    <div className="rounded-lg border border-dashed border-surface-300 dark:border-surface-700 p-4 bg-surface-50 dark:bg-surface-800/30 flex items-center gap-4">
                       <div className="w-14 h-14 rounded-lg bg-surface-100 dark:bg-surface-800 text-surface-400 flex items-center justify-center flex-shrink-0">
                         <FileText className="w-6 h-6" />
                       </div>
@@ -750,7 +782,7 @@ const Staff: React.FC = () => {
                   </div>
 
                   {/* Status Toggle */}
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-surface-50 dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700">
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-surface-50 dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700">
                     <div className="flex items-center gap-3">
                       <ShieldCheck className="w-5 h-5 text-brand-500 flex-shrink-0" />
                       <div>
@@ -774,9 +806,10 @@ const Staff: React.FC = () => {
                     </label>
                   </div>
                 </div>
+              </div>
 
                 {/* Modal Footer Buttons */}
-                <div className="flex items-center justify-end gap-3 pt-5 border-t border-surface-100 dark:border-surface-800">
+                <div className="flex-shrink-0 flex items-center justify-end gap-3 px-6 sm:px-8 py-4 border-t border-surface-100 dark:border-surface-800 bg-white dark:bg-surface-900">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
@@ -800,6 +833,107 @@ const Staff: React.FC = () => {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Xodim ma'lumotlarini ko'rish (kichik modal) */}
+      <AnimatePresence>
+        {viewStaff && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setViewStaff(null)}
+              className="fixed inset-0 bg-surface-950/70 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.98, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.98, opacity: 0, y: 10 }}
+              transition={{ duration: 0.15 }}
+              className="relative bg-white dark:bg-surface-900 w-full max-w-sm rounded-lg shadow-xl border border-surface-200 dark:border-surface-800 overflow-hidden z-10"
+            >
+              <div className="p-5 border-b border-surface-100 dark:border-surface-800 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {viewStaff.photo ? (
+                    <img
+                      src={viewStaff.photo}
+                      alt={viewStaff.name}
+                      className="w-12 h-12 rounded-lg object-cover border border-surface-200 dark:border-surface-700"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-brand-50 dark:bg-brand-950/60 flex items-center justify-center text-brand-600 dark:text-brand-400 font-bold border border-brand-200/60 dark:border-brand-800/60">
+                      {viewStaff.name[0]}
+                      {(viewStaff.last_name ?? '')[0] ?? ''}
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="text-base font-bold text-surface-900 dark:text-white">
+                      {viewStaff.name} {viewStaff.last_name}
+                    </h3>
+                    <span className="text-xs text-surface-500 dark:text-surface-400">
+                      {ROLES_MAP[viewStaff.position] || viewStaff.position || '-'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setViewStaff(null)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-surface-500 dark:text-surface-400">Telefon</span>
+                  <span className="font-semibold text-surface-900 dark:text-white">
+                    {viewStaff.phone || '-'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-surface-500 dark:text-surface-400">Oylik maosh</span>
+                  <span className="font-semibold text-surface-900 dark:text-white">
+                    {formatSom(Number(viewStaff.salary))} so'm
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-surface-500 dark:text-surface-400">Ishga kirgan</span>
+                  <span className="font-semibold text-surface-900 dark:text-white">
+                    {viewStaff.hired_date || '-'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-surface-500 dark:text-surface-400">Holati</span>
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${
+                      viewStaff.is_active
+                        ? 'bg-success-50 dark:bg-success-950/40 text-success-700 dark:text-success-300 border-success-200 dark:border-success-800/60'
+                        : 'bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-400 border-surface-200 dark:border-surface-700'
+                    }`}
+                  >
+                    {viewStaff.is_active ? 'Faol' : 'Nofaol'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-5 pt-0 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleEdit(viewStaff);
+                    setViewStaff(null);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium shadow-sm transition-colors inline-flex items-center gap-2"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Tahrirlash</span>
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
