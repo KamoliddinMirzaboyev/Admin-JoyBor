@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Sparkles, Upload, Receipt, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../data/api';
-import { formatCurrencyDetailed } from '../../utils/formatters';
+import { formatCurrencyDetailed, formatDate } from '../../utils/formatters';
 import type { DormitorySettings, DormitoryPayment, TariffPlan } from './types';
 
 interface TariffsTabProps {
@@ -42,6 +42,10 @@ export default function TariffsTab({ settings }: TariffsTabProps) {
   const [submitting, setSubmitting] = useState(false);
 
   const currentTariff = tariffs.find((t) => t.id === settings.tariff) || null;
+
+  const daysLeft = settings.paid_until
+    ? Math.ceil((new Date(settings.paid_until).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000)
+    : null;
 
   const loadPayments = () => {
     setPaymentsLoading(true);
@@ -145,6 +149,40 @@ export default function TariffsTab({ settings }: TariffsTabProps) {
               </div>
               <span className="text-xs font-medium text-surface-500 dark:text-surface-400">{currentTariff.subtitle}</span>
             </div>
+
+            {settings.paid_until && (
+              <div
+                className={`flex items-center justify-between gap-3 p-3.5 rounded-lg border mb-4 ${
+                  daysLeft !== null && daysLeft <= 3
+                    ? 'bg-danger-50 dark:bg-danger-950/30 border-danger-200 dark:border-danger-800/60'
+                    : 'bg-white dark:bg-surface-900 border-surface-100 dark:border-surface-800'
+                }`}
+              >
+                <span
+                  className={`text-sm font-semibold ${
+                    daysLeft !== null && daysLeft <= 3
+                      ? 'text-danger-700 dark:text-danger-300'
+                      : 'text-surface-600 dark:text-surface-400'
+                  }`}
+                >
+                  To'lov sanasi
+                </span>
+                <span
+                  className={`text-sm font-bold ${
+                    daysLeft !== null && daysLeft <= 3
+                      ? 'text-danger-700 dark:text-danger-300'
+                      : 'text-surface-900 dark:text-white'
+                  }`}
+                >
+                  {formatDate(settings.paid_until)}
+                  {daysLeft !== null && daysLeft <= 3 && (
+                    <span className="ml-2">
+                      ({daysLeft < 0 ? `${Math.abs(daysLeft)} kun o'tdi` : daysLeft === 0 ? 'bugun tugaydi' : `${daysLeft} kun qoldi`})
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               <div className="p-3.5 rounded-lg bg-white dark:bg-surface-900 border border-surface-100 dark:border-surface-800">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, Moon, Sun, User, LogOut, PanelLeft, CheckCircle, AlertCircle, Info, Clock, Eye, RefreshCw, X } from 'lucide-react';
+import { Bell, Moon, Sun, User, LogOut, PanelLeft, CheckCircle, AlertCircle, Info, Clock, Eye, RefreshCw, X, CalendarClock } from 'lucide-react';
 import { useAppStore } from '../../stores/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -42,6 +42,27 @@ const Navbar: React.FC<NavbarProps> = ({ handleSidebarToggle }) => {
     };
 
     fetchProfile();
+  }, []);
+
+  // Obuna to'lov muddati — 3 kun va kamroq qolganda navbarda ogohlantirish
+  const [paidUntilDaysLeft, setPaidUntilDaysLeft] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    const fetchPaidUntil = async () => {
+      try {
+        const data = (await get('/admin/my-dormitories/')) as { results?: { paid_until?: string | null }[] } & { paid_until?: string | null };
+        const dormitory = Array.isArray(data?.results) ? data.results[0] : data;
+        if (!dormitory?.paid_until) return;
+        const diff = Math.ceil(
+          (new Date(dormitory.paid_until).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000
+        );
+        setPaidUntilDaysLeft(diff);
+      } catch {
+        // yuklanmasa, ogohlantirish ko'rsatilmaydi
+      }
+    };
+
+    fetchPaidUntil();
   }, []);
 
   // Use notifications hook
@@ -138,6 +159,25 @@ const Navbar: React.FC<NavbarProps> = ({ handleSidebarToggle }) => {
             >
               <PanelLeft className="w-5 h-5" />
             </motion.button>
+
+            {/* Obuna to'lov muddati ogohlantirishi */}
+            {paidUntilDaysLeft !== null && paidUntilDaysLeft <= 3 && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                onClick={() => navigate('/settings')}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-danger-50 dark:bg-danger-950/40 text-danger-700 dark:text-danger-300 border border-danger-200 dark:border-danger-800/60 text-xs font-bold hover:bg-danger-100 dark:hover:bg-danger-900/40 transition-colors"
+                title="Sozlamalar > Obuna bo'limiga o'tish"
+              >
+                <CalendarClock className="w-4 h-4" />
+                {paidUntilDaysLeft < 0
+                  ? `To'lov muddati ${Math.abs(paidUntilDaysLeft)} kun oldin tugagan`
+                  : paidUntilDaysLeft === 0
+                    ? "To'lov bugun tugaydi"
+                    : `To'lovga ${paidUntilDaysLeft} kun qoldi`}
+              </motion.button>
+            )}
+
             {/* Theme Toggle */}
             <motion.button
               whileHover={{ scale: 1.05 }}

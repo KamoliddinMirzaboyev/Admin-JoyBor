@@ -32,6 +32,7 @@ export interface DormitorySettings {
   file?: string | null;
   link?: string;
   tariff?: number | null;
+  paid_until?: string | null;
 }
 
 export interface TariffPlan {

@@ -474,13 +474,6 @@ export const api = {
     post('/notifications/mark-read/', { id, notification_id: id }),
   markAllApplicationNotificationsAsRead: () => post('/notifications/mark-all-read/', {}),
 
-  // Complaints
-  getComplaints: (params?: { status?: string; category?: string; page?: number }) =>
-    get(`/complaints/${qs(params)}`),
-  getComplaint: (id: number | string) => get(`/complaints/${id}/`),
-  updateComplaint: (id: number | string, data: Record<string, unknown>) =>
-    patch(`/complaints/${id}/`, data),
-
   // Collections (admin view)
   getCollections: (params?: { floor?: number; page?: number }) =>
     get(`/collections/${qs(params)}`),
