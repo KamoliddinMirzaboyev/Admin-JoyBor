@@ -390,6 +390,29 @@ export const api = {
     get(`/dormitory-payments/${qs(params)}`),
   createDormitoryPayment: (data: FormData) => post('/dormitory-payments/', data),
 
+  // Shikoyat va takliflar (talaba/sardordan admin, admin-superadmin)
+  getReceivedComplaints: (params?: {
+    search?: string;
+    ordering?: string;
+    sender_role?: string;
+    type?: string;
+    status?: string;
+    category?: string;
+    floor?: number | string;
+    page?: number;
+  }) => get(`/admin/complaints/received/${qs(params)}`),
+  getSentComplaints: (params?: {
+    search?: string;
+    ordering?: string;
+    type?: string;
+    status?: string;
+    category?: string;
+    page?: number;
+  }) => get(`/admin/complaints/sent/${qs(params)}`),
+  respondComplaint: (id: number | string, data: { admin_response: string; status: string }) =>
+    patch(`/admin/complaints/${id}/respond/`, data),
+  createComplaintToSuperadmin: (data: FormData) => post('/admin/complaints/to-superadmin/', data),
+
   // Amenities
   getAmenities: () => get('/amenities/'),
   createAmenity: (data: { name: string; is_active?: boolean }) => post('/amenities/', data),

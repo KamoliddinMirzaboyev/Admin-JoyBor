@@ -9,6 +9,7 @@ import {
   Settings,
   UserCheck,
   BarChart3,
+  MessageSquareWarning,
 } from 'lucide-react';
 import { useAppStore } from '../../stores/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,6 +25,7 @@ const navigation = [
   { name: 'Davomat', href: '/attendance', icon: UserCheck },
   { name: 'Hisobotlar', href: '/reports', icon: BarChart3 },
   { name: 'Arizalar', href: '/applications', icon: FileText },
+  { name: 'Shikoyat va Takliflar', href: '/complaints', icon: MessageSquareWarning },
   { name: 'Sozlamalar', href: '/settings', icon: Settings },
 ];
 
