@@ -31,6 +31,7 @@ export interface DormitorySettings {
   phone_number?: string;
   file?: string | null;
   link?: string;
+  tariff?: number | null;
 }
 
 export interface TariffPlan {

@@ -16,7 +16,7 @@ const TABS = [
   { id: 'amenities', label: 'Qulayliklar', icon: ListChecks },
   { id: 'rules', label: 'Tartib Qoidalari', icon: ListChecks },
   { id: 'images', label: 'Yotoqxona Suratlari', icon: FileImage },
-  { id: 'tariffs', label: 'Tariflar', icon: CreditCard },
+  { id: 'tariffs', label: 'Obuna', icon: CreditCard },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];

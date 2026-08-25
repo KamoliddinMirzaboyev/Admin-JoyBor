@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { CreditCard, Upload, Receipt, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { Sparkles, Upload, Receipt, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../data/api';
 import { formatCurrencyDetailed } from '../../utils/formatters';
-import type { DormitorySettings, DormitoryPayment } from './types';
+import type { DormitorySettings, DormitoryPayment, TariffPlan } from './types';
 
 interface TariffsTabProps {
   settings: DormitorySettings;
@@ -37,8 +37,11 @@ const emptyPaymentForm = {
 export default function TariffsTab({ settings }: TariffsTabProps) {
   const [payments, setPayments] = useState<DormitoryPayment[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(true);
+  const [tariffs, setTariffs] = useState<TariffPlan[]>([]);
   const [paymentForm, setPaymentForm] = useState(emptyPaymentForm);
   const [submitting, setSubmitting] = useState(false);
+
+  const currentTariff = tariffs.find((t) => t.id === settings.tariff) || null;
 
   const loadPayments = () => {
     setPaymentsLoading(true);
@@ -56,10 +59,26 @@ export default function TariffsTab({ settings }: TariffsTabProps) {
 
   useEffect(() => {
     loadPayments();
+    api
+      .getTariffs()
+      .then((data) => {
+        const list = Array.isArray(data) ? data : (data as { results?: TariffPlan[] })?.results || [];
+        setTariffs(list as TariffPlan[]);
+      })
+      .catch(() => {
+        /* tarif ma'lumotini yuklab bo'lmadi */
+      });
   }, []);
 
+  useEffect(() => {
+    if (!currentTariff || paymentForm.amount) return;
+    setPaymentForm((f) => ({ ...f, amount: String(currentTariff.month_price) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTariff]);
+
   const handlePeriodChange = (period: 'month' | 'year') => {
-    setPaymentForm((f) => ({ ...f, period }));
+    const suggested = currentTariff ? (period === 'year' ? currentTariff.year_price : currentTariff.month_price) : null;
+    setPaymentForm((f) => ({ ...f, period, amount: suggested ? String(suggested) : f.amount }));
   };
 
   const handleSubmitPayment = async (e: React.FormEvent) => {
@@ -95,35 +114,67 @@ export default function TariffsTab({ settings }: TariffsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Joriy narx */}
+      {/* Joriy tarif */}
       <div className="bg-white dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 p-6 shadow-sm">
-        <div className="flex items-center gap-3 border-b border-surface-100 dark:border-surface-800 pb-4 mb-4">
+        <div className="flex items-center gap-3 border-b border-surface-100 dark:border-surface-800 pb-4 mb-5">
           <div className="p-2 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-800/40">
-            <CreditCard className="w-5 h-5" />
+            <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-surface-900 dark:text-white">
-              Yotoqxonangizning joriy narxi
-            </h3>
+            <h3 className="text-base font-bold text-surface-900 dark:text-white">Joriy tarif</h3>
             <p className="text-xs text-surface-500 dark:text-surface-400">
-              "Umumiy Ma'lumotlar" bo'limida belgilangan oylik/yillik narx
+              Platformadan foydalanish uchun ulangan obuna rejangiz
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/40 border border-surface-100 dark:border-surface-800">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-1">Oylik</p>
-            <p className="text-xl font-bold text-surface-900 dark:text-white">
-              {settings.month_price ? formatCurrencyDetailed(settings.month_price) : 'Kiritilmagan'}
-            </p>
+
+        {!currentTariff ? (
+          <div className="p-6 rounded-xl border border-dashed border-surface-200 dark:border-surface-700 text-center text-sm text-surface-500">
+            Sizga hali tarif biriktirilmagan. Superadmin bilan bog'laning.
           </div>
-          <div className="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/40 border border-surface-100 dark:border-surface-800">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-1">Yillik</p>
-            <p className="text-xl font-bold text-surface-900 dark:text-white">
-              {settings.year_price ? formatCurrencyDetailed(settings.year_price) : 'Kiritilmagan'}
-            </p>
+        ) : (
+          <div className="rounded-xl border border-brand-200 dark:border-brand-800/50 bg-brand-50/50 dark:bg-brand-950/20 p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-2.5">
+                <span className="text-lg font-bold text-surface-900 dark:text-white">{currentTariff.name}</span>
+                {currentTariff.badge && (
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-brand-600 text-white">
+                    {currentTariff.badge}
+                  </span>
+                )}
+              </div>
+              <span className="text-xs font-medium text-surface-500 dark:text-surface-400">{currentTariff.subtitle}</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <div className="p-3.5 rounded-lg bg-white dark:bg-surface-900 border border-surface-100 dark:border-surface-800">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-1">Oylik</p>
+                <p className="text-lg font-bold text-surface-900 dark:text-white">
+                  {formatCurrencyDetailed(currentTariff.month_price)}
+                </p>
+              </div>
+              <div className="p-3.5 rounded-lg bg-white dark:bg-surface-900 border border-surface-100 dark:border-surface-800">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-surface-500 mb-1">
+                  Yillik <span className="text-success-600 dark:text-success-400">(-{currentTariff.yearly_discount_percent}%)</span>
+                </p>
+                <p className="text-lg font-bold text-surface-900 dark:text-white">
+                  {formatCurrencyDetailed(currentTariff.year_price)}
+                </p>
+              </div>
+            </div>
+
+            {currentTariff.features?.length > 0 && (
+              <ul className="space-y-2">
+                {currentTariff.features.map((f, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-surface-700 dark:text-surface-300">
+                    <CheckCircle2 className="w-4 h-4 text-success-600 dark:text-success-400 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Obuna to'lovini yuborish */}
@@ -184,6 +235,11 @@ export default function TariffsTab({ settings }: TariffsTabProps) {
               placeholder="3500000"
               className="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 rounded-lg text-surface-900 dark:text-white text-sm focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none transition-colors"
             />
+            {currentTariff && (
+              <p className="mt-1 text-[11px] text-surface-500 dark:text-surface-400">
+                {currentTariff.name} tarifi bo'yicha tavsiya etilgan summa avtomatik to'ldirildi
+              </p>
+            )}
           </div>
 
           <div>
