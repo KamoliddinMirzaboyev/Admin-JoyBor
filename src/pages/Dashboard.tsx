@@ -335,9 +335,9 @@ const Dashboard: React.FC = () => {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  <Cell key="occupied" fill="#0f766e" />
-                  <Cell key="male" fill="#14b8a6" />
-                  <Cell key="female" fill="#5eead4" />
+                  <Cell key="occupied" fill="#1d4ed8" />
+                  <Cell key="male" fill="#0ea5e9" />
+                  <Cell key="female" fill="#f43f5e" />
                 </Pie>
                 <Tooltip
                   formatter={(value: number, name: string) => [
@@ -375,13 +375,13 @@ const Dashboard: React.FC = () => {
               <span className="inline-block w-3 h-3 rounded-full bg-brand-700"></span>
               <span className="text-sm font-medium text-brand-700 dark:text-brand-300">Band joylar ({rooms.occupied || 0})</span>
             </div>
-            <div className="flex items-center space-x-3 bg-brand-50 dark:bg-brand-900/20 px-3 py-2 rounded-xl">
-              <span className="inline-block w-3 h-3 rounded-full bg-brand-500"></span>
-              <span className="text-sm font-medium text-brand-700 dark:text-brand-300">Yigitlar uchun bo'sh joylar ({roomsMale.free || 0})</span>
+            <div className="flex items-center space-x-3 bg-info-50 dark:bg-info-900/20 px-3 py-2 rounded-xl">
+              <span className="inline-block w-3 h-3 rounded-full bg-info-500"></span>
+              <span className="text-sm font-medium text-info-700 dark:text-info-300">Yigitlar uchun bo'sh joylar ({roomsMale.free || 0})</span>
             </div>
-            <div className="flex items-center space-x-3 bg-brand-50 dark:bg-brand-900/20 px-3 py-2 rounded-xl">
-              <span className="inline-block w-3 h-3 rounded-full bg-brand-300"></span>
-              <span className="text-sm font-medium text-brand-700 dark:text-brand-300">Qizlar uchun bo'sh joylar ({roomsFemale.free || 0})</span>
+            <div className="flex items-center space-x-3 bg-danger-50 dark:bg-danger-900/20 px-3 py-2 rounded-xl">
+              <span className="inline-block w-3 h-3 rounded-full bg-danger-500"></span>
+              <span className="text-sm font-medium text-danger-700 dark:text-danger-300">Qizlar uchun bo'sh joylar ({roomsFemale.free || 0})</span>
             </div>
           </div>
         </motion.div>
