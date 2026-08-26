@@ -32,12 +32,14 @@ const statusColors: Record<string, string> = {
   PENDING: 'bg-warning-100 dark:bg-warning-900/30 text-warning-700 dark:text-warning-300',
   APPROVED: 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300',
   REJECTED: 'bg-danger-100 dark:bg-danger-900/30 text-danger-700 dark:text-danger-300',
+  CONVERTED: 'bg-info-100 dark:bg-info-900/30 text-info-700 dark:text-info-300',
 };
 
 const statusLabels: Record<string, string> = {
   PENDING: 'Ko\'rib chiqilmoqda',
   APPROVED: 'Qabul qilindi',
   REJECTED: 'Rad etilgan',
+  CONVERTED: 'Talabaga aylantirilgan',
 };
 
 export const getStatusColor = (status: string) => {
@@ -48,4 +50,12 @@ export const getStatusColor = (status: string) => {
 export const getStatusLabel = (status: string) => {
   const upperStatus = String(status).toUpperCase();
   return statusLabels[upperStatus] || status;
+};
+
+export type CanonicalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CONVERTED' | 'UNKNOWN';
+
+export const normalizeStatus = (status: string): CanonicalStatus => {
+  const s = String(status).toUpperCase();
+  if (s === 'PENDING' || s === 'APPROVED' || s === 'REJECTED' || s === 'CONVERTED') return s;
+  return 'UNKNOWN';
 };

@@ -25,6 +25,23 @@ const Navbar: React.FC<NavbarProps> = ({ handleSidebarToggle }) => {
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [showProfile, setShowProfile] = React.useState(false);
   const [notificationFilter, setNotificationFilter] = React.useState<'all' | 'unread'>('unread');
+  const notifRef = React.useRef<HTMLDivElement>(null);
+  const profileRef = React.useRef<HTMLDivElement>(null);
+
+  // Bildirishnoma/profil oynasidan boshqa joyga bosilganda yopish
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (showNotifications && notifRef.current && !notifRef.current.contains(target)) {
+        setShowNotifications(false);
+      }
+      if (showProfile && profileRef.current && !profileRef.current.contains(target)) {
+        setShowProfile(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showNotifications, showProfile]);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -189,7 +206,7 @@ const Navbar: React.FC<NavbarProps> = ({ handleSidebarToggle }) => {
             </motion.button>
 
             {/* Notifications */}
-            <div className="relative">
+            <div className="relative" ref={notifRef}>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -211,16 +228,13 @@ const Navbar: React.FC<NavbarProps> = ({ handleSidebarToggle }) => {
               {/* Notifications Dropdown */}
               <AnimatePresence>
                 {showNotifications && (
-                  <>
-                    <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setShowNotifications(false)} />
-                    <motion.div
-                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute right-0 mt-2 w-96 bg-white dark:bg-surface-800 rounded-xl shadow-sm border border-surface-200 dark:border-surface-800 overflow-hidden z-50"
-                      onClick={e => e.stopPropagation()}
-                    >
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-2 w-96 bg-white dark:bg-surface-800 rounded-xl shadow-sm border border-surface-200 dark:border-surface-800 overflow-hidden z-50"
+                  >
                       {/* Header */}
                       <div className="px-4 py-3 border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900/40">
                         <div className="flex items-center justify-between">
@@ -375,13 +389,12 @@ const Navbar: React.FC<NavbarProps> = ({ handleSidebarToggle }) => {
                         </div>
                       </div>
                     </motion.div>
-                  </>
                 )}
               </AnimatePresence>
             </div>
 
             {/* Profile */}
-            <div className="relative">
+            <div className="relative" ref={profileRef}>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -447,14 +460,11 @@ const Navbar: React.FC<NavbarProps> = ({ handleSidebarToggle }) => {
 
               {/* Profile Dropdown */}
               {showProfile && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowProfile(false)} />
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     className="absolute right-0 mt-2 w-48 bg-white dark:bg-surface-800 rounded-xl shadow-sm border border-surface-200 dark:border-surface-800 py-1 z-50"
-                    onClick={e => e.stopPropagation()}
                   >
                     <button
                       className="w-full px-4 py-2 text-left text-sm text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 flex items-center space-x-2"
@@ -472,7 +482,6 @@ const Navbar: React.FC<NavbarProps> = ({ handleSidebarToggle }) => {
                       <span>Chiqish</span>
                     </button>
                   </motion.div>
-                </>
               )}
             </div>
           </div>

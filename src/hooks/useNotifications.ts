@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../data/api';
 import { toast } from 'sonner';
@@ -12,16 +12,35 @@ export interface Notification {
   image?: string | null;
 }
 
+// Yumshoq, bosinqroq "ding" ovozi — tashqi mp3 fayl kerak emas
+const playChime = (ctxRef: MutableRefObject<AudioContext | null>) => {
+  try {
+    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!ctxRef.current) ctxRef.current = new Ctx();
+    const ctx = ctxRef.current;
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0.001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.35);
+  } catch {
+    // audio ishlamasa ham indamay o'tamiz
+  }
+};
+
 export const useNotifications = () => {
   const queryClient = useQueryClient();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const prevUnreadCount = useRef<number>(0);
-  const primed = useRef(false);
-
-  // Initialize audio
-  useEffect(() => {
-    audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-  }, []);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const seenIds = useRef<Set<number> | null>(null);
 
   const { data: notifications = [], isLoading, error, refetch } = useQuery<Notification[]>({
     queryKey: ['notifications'],
@@ -36,29 +55,25 @@ export const useNotifications = () => {
   const unreadNotifications = notifications.filter(n => !n.is_read);
   const unreadCount = unreadNotifications.length;
 
-  // Play sound when unread count increases (skip first fetch baseline)
+  // Yangi bildirishnoma kelganda — id bo'yicha, bir marta ovoz chiqarish.
+  // (unreadCount taqqoslash o'rniga id set ishlatiladi — mark-as-read/refetch
+  // poygasida bitta bildirishnoma bir necha marta "yangi" bo'lib qolmasin uchun)
   useEffect(() => {
-    if (!primed.current) {
-      prevUnreadCount.current = unreadCount;
-      primed.current = true;
+    if (!seenIds.current) {
+      seenIds.current = new Set(notifications.map(n => n.id));
       return;
     }
-    if (unreadCount > prevUnreadCount.current) {
-      audioRef.current?.play().catch(() => {});
-      
-      // Optional: Show toast for new notification if it's just one
-      if (unreadCount - prevUnreadCount.current === 1) {
-        const latest = unreadNotifications[0];
-        if (latest) {
-          toast.info(latest.message, {
-            description: 'Yangi bildirishnoma keldi',
-            duration: 5000,
-          });
-        }
-      }
+    const freshUnread = unreadNotifications.filter(n => !seenIds.current!.has(n.id));
+    notifications.forEach(n => seenIds.current!.add(n.id));
+
+    if (freshUnread.length > 0) {
+      playChime(audioCtxRef);
+      toast.info(freshUnread[0].message, {
+        description: 'Yangi bildirishnoma keldi',
+        duration: 5000,
+      });
     }
-    prevUnreadCount.current = unreadCount;
-  }, [unreadCount, unreadNotifications]);
+  }, [notifications, unreadNotifications]);
 
   const markAsReadMutation = useMutation({
     mutationFn: (id: number) => api.markNotificationAsRead(id),

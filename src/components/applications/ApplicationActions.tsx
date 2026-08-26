@@ -8,7 +8,7 @@ import api from '../../data/api';
 import { invalidateApplicationCaches } from '../../utils/cacheUtils';
 import { useGlobalEvents } from '../../utils/globalEvents';
 import AddStudentModal from './AddStudentModal';
-import { Application } from './types';
+import { Application, normalizeStatus } from './types';
 
 function ConfirmModal({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
   return (
@@ -103,7 +103,7 @@ export default function ApplicationActions({ application, id, onChanged }: { app
     }
   };
 
-  const status = String(application.status).toUpperCase();
+  const status = normalizeStatus(application.status);
 
   return (
     <div className="mt-6">
@@ -258,7 +258,7 @@ export default function ApplicationActions({ application, id, onChanged }: { app
         application={application}
         open={showAddStudentModal}
         onClose={() => setShowAddStudentModal(false)}
-        onSuccess={() => emitStudentUpdate({ action: 'created' })}
+        onSuccess={() => { emitStudentUpdate({ action: 'created' }); onChanged(); }}
       />
     </div>
   );
